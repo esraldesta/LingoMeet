@@ -1,0 +1,59 @@
+{
+    "coming": {
+        "message": "በቅርብ ቀን"
+    },
+    "layout": {
+        "logoName": "ዕቁብ",
+        "dashboard": "ዳሽቦርድ",
+        "equbs": "ዕቁቦች",
+        "createequb": "ኣዲስ ዕቁብ ይመዝግቡ",
+        "createUser": "ኣዲስ ተጠቃሚ ይመዝግቡ",
+        "setting": "ማስተካከያ",
+        "myAccount": "የኔ ኣካውንት",
+        "support": "እርዳታ",
+        "logout": "ለመውጣት"
+    },
+    "logout": {
+        "title": "ለመውጣት",
+        "des": "ለመውጣት እርግጠኛ ኖት?",
+        "confirm": "ኣዎ ልውጣ",
+        "declain": "ኣይ መልሰኝ"
+    },
+    "ListEqubes": {
+        "title": "የዕቁቦች ዝርዝር",
+        "des": "በኣባልነት የሚሳተፉባቸው የዕቁቦች ዝርዝር",
+        "table": {
+            "name": "ስም",
+            "contribution": "የክፍያ መጠን",
+            "maxUniqueIds": "የዕጣ ብዛት",
+            "lotteryDay": "ዕጣ የሚወጣበት ቀን",
+            "contributionDay": "ክፍያ መሰብሰብያ ቅን",
+            "numberOfequbes": "ዕቁቦች"
+        }
+    },
+    "contribution": {
+        "title": "የክፍያ መዝገብ",
+        "round": "ዙር",
+        "des": "የዚህ ዕቁብ ክፍያዎች ዝርዝር",
+        "equbLeveltitle": "ደረጃ",
+        "equbLevelContribution": "ደርጃ በቁጥር",
+        "paymentStatus": "የክፍያ ሁኔታ",
+        "contributions": "ክፍያዎች",
+        "paid": "ተከፍሏል",
+        "unpaid": "ኣልተከፈለም"
+    },
+    "support": {
+        "nameReq": "ስም ያስገቡ",
+        "emilReq": "ኢሜል ያስገቡ",
+        "emailInvalid": "የሚሰራ ኢሜይል ያስገቡ",
+        "messageReq": "መልእክት ያስገቡ",
+        "name": "ስም",
+        "email": "ኢሜል",
+        "message": "መልእክት",
+        "loading": "በመላክ ላይ",
+        "btnName": "ኢሜል ላክ",
+        "toastTitle": "ኢሜል",
+        "toastSuccess": "መልዕክትዎን ተቀብለናል እናመሰግናለን",
+        "toastError": "መልዕክትዎ አልደረሰም"
+    }
+}

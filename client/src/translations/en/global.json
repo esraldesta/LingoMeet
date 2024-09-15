@@ -1,0 +1,60 @@
+{
+    "coming": {
+        "message": "Coming soon"
+    },
+    "layout": {
+        "logoName": "Equb",
+        "dashboard": "Dashboard",
+        "equbs": "Equbs",
+        "createequb": "Create Equb",
+        "createUser": "Create User",
+        "setting": "Settings",
+        "myAccount": "My Account",
+        "support": "Support",
+        "logout": "Logout"
+    },
+    "logout": {
+        "title": "Logout",
+        "des": "Are you sure you want to logout?",
+        "confirm": "Yes, Logout",
+        "declain": "Cancel"
+    },
+    "ListEqubes": {
+        "title": "List of Equbes",
+        "des": "List of all Equb's of user",
+        "table": {
+            "name": "Name",
+            "contribution": "Amount",
+            "maxUniqueIds": "UniqueIds",
+            "lotteryDay": "LotteryDay",
+            "contributionDay": "ContributionDay",
+            "numberOfequbes": "Equbes"
+        }
+    },
+    "contribution": {
+        "title": "Equb Payments",
+        "round": "Round",
+        "des": "All payments of this member",
+        "equbLeveltitle": "Equb-Level",
+        "equbLevelContribution": "Contribution",
+        "paymentStatus": "Payment Status",
+        "contributions": "Contributions",
+        "paid":"Paid",
+        "unpaid":"Unpaid"
+        
+    },
+    "support": {
+        "nameReq": "Name is required",
+        "emilReq": "Email is required",
+        "emailInvalid": "Email address is invalid",
+        "messageReq": "Message is required",
+        "name": "Name",
+        "email": "Email",
+        "message": "Message",
+        "loading": "Loading",
+        "btnName": "Send email",
+        "toastTitle": "Email",
+        "toastSuccess": "We have received your message",
+        "toastError": "Email send failed"
+    }
+}

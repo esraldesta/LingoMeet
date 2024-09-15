@@ -1,0 +1,59 @@
+{
+    "coming": {
+        "message": "ኣብ ቀረባ እዋን"
+    },
+    "layout": {
+        "logoName": "ዕቁብ",
+        "dashboard": "ዳሽቦርድ",
+        "equbs": "ዕቁባት",
+        "createequb": "ሓዱሽ ዕቑብ ይመዝግቡ",
+        "createUser": "ሓዱሽ ተጠቃሚ ይመዝግቡ",
+        "setting": "መስተኻኸሊ",
+        "myAccount": "ናተይ ኣካውንት",
+        "support": "ሓገዝ",
+        "logout": "ንምውፃእ"
+    },
+    "logout": {
+        "title": "ንምውፃእ",
+        "des": "ክወፁ ከምዝደልዩ ርግፀኛ ድዮም?",
+        "confirm": "እወ ክወፅእ",
+        "declain": "ኣይ መልሰኒ"
+    },
+    "ListEqubes": {
+        "title": "ናይ ዕቁባት ዝርዝር",
+        "des": "ብኣባልነት ዝሳተፉሎም ዕቁባት ዝርዝር",
+        "table": {
+            "name": "ስም",
+            "contribution": "ክፍሊት መጠን",
+            "maxUniqueIds": "በዝሒ ዕፃ",
+            "lotteryDay": "ዕፃ ዝወድቀሉ መዓልቲ",
+            "contributionDay": "ዝእከበሉ መዓልቲ",
+            "numberOfequbes": "ዕቁባት"
+        }
+    },
+    "contribution": {
+        "title": "ክፍሊት መዝገብ",
+        "round": "ዙር",
+        "des": "ናይዚ ዕቁብ ክፍሊታት ዝርዝር",
+        "equbLeveltitle": "ደረጃ",
+        "equbLevelContribution": "ደርጃ ብኣሃዝ",
+        "paymentStatus": "ክፍሊት ኩነት",
+        "contributions": "ክፍሊታት",
+        "paid": "ተኸፊሉ",
+        "unpaid": "ኣይተኸፈለን"
+    },
+    "support": {
+        "nameReq": "ሽም የእትው",
+        "emilReq": "ኢሜል የእትው",
+        "emailInvalid": "ዝሰርሕ ኢሜይል የእትው",
+        "messageReq": "መልእኽቲ የእትው",
+        "name": "ሽም",
+        "email": "ኢሜል",
+        "message": "መልእኽቲ",
+        "loading": "ኣብ ምላኽ",
+        "btnName": "ኢሜል ለኣኽ",
+        "toastTitle": "ኢሜል",
+        "toastSuccess": "መልእኽቶም ተቀቢልና የቐንየልና",
+        "toastError": "መልዕክትዎ አልደረሰም"
+    }
+}
