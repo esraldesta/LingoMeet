@@ -12,6 +12,7 @@ import { AnimatePresence } from "framer-motion";
 import Settings from "./pages/Settings";
 import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
+import Call from "./pages/Call";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
                 <Route path="/" element={<Layout />}>
                   <Route index element={<HomePage />} />
                   <Route path="/home" element={<HomePage />} />
+                  <Route path="/call" element={<Call />} />
                   <Route path="/signin" element={<Signin />} />
                   <Route path="/signout" element={<Logout />} />
                   {/* <Route

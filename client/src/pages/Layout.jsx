@@ -25,12 +25,12 @@ const Layout = () => {
   const { t } = useTranslation("global");
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
+    <div className="flex w-full flex-col">
       {/* Header */}
       <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 mb-1">
           <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-            <Logo />
+            <h2>TalkMate</h2>
             <Link
               to="/"
               className="flex items-center gap-2 text-lg font-semibold md:text-base"
@@ -77,25 +77,27 @@ const Layout = () => {
         </header>
 
         {/* Main Content */}
-        <Outlet />
+        <div className="h-[85vh] overflow-auto">
+          <Outlet />
 
-        {/* Footer */}
-        <footer>
-          <div className="w-full mx-auto max-w-screen-xl p-4 flex items-center justify-center mb-10">
-            <span className="text-sm text-gray-500 sm:text-center dark:text-gray-400">
-              © 2024{" "}
-              <a href="#" className="hover:underline">
-                Equb™
-              </a>
-              . All Rights Reserved.
-            </span>
-          </div>
-        </footer>
+          {/* Footer */}
+          <footer>
+            <div className="w-full mx-auto max-w-screen-xl p-4 flex items-center justify-center mb-10">
+              <span className="text-sm text-gray-500 sm:text-center dark:text-gray-400">
+                © 2024{" "}
+                <a href="#" className="hover:underline">
+                  Equb™
+                </a>
+                . All Rights Reserved.
+              </span>
+            </div>
+          </footer>
+        </div>
       </div>
 
       {/* Sidebar for desktop and Bottom Navbar for mobile */}
 
-      <nav className="fixed z-50 w-full h-16 max-w-lg -translate-x-1/2 bg-white border border-gray-200 rounded-t-full -bottom-2 left-1/2 dark:bg-gray-700 dark:border-gray-600 overflow-hidden">
+      <nav className="fixed z-40 w-full h-16 max-w-lg -translate-x-1/2 bg-white border border-gray-200 rounded-t-full -bottom-1 left-1/2 dark:bg-gray-700 dark:border-gray-600 overflow-hidden">
         <div className="grid h-full max-w-lg grid-cols-5 mx-auto">
           <button
             data-tooltip-target="tooltip-home"
