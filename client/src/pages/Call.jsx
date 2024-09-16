@@ -1,8 +1,102 @@
-export default function Call() {
-  return (
-    <div className="h-full">
-      <div className="border-solid border-red-50 mx-2 ">
+import { CameraOff, MicOff } from "lucide-react";
+import { Button } from "../components/ui/button";
 
+export default function Call() {
+  const participants = [
+    {
+      name: "Andy Will",
+      image:
+        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
+    },
+    {
+        name: "Andy Will",
+        image:
+          "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
+      },
+      {
+        name: "Andy Will",
+        image:
+          "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
+      },
+      {
+        name: "Andy Will",
+        image:
+          "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
+      },
+      {
+        name: "Andy Will",
+        image:
+          "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
+      },
+      {
+        name: "Andy Will",
+        image:
+          "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
+      },
+      {
+        name: "Andy Will",
+        image:
+          "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
+      },
+      {
+        name: "Andy Will",
+        image:
+          "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
+      },
+    {
+      name: "Emmy Lou",
+      image:
+        "https://images.unsplash.com/photo-1500917293891-ef795e70e1f6?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1650&q=80",
+    },
+    {
+      name: "Tim Russel",
+      image:
+        "https://images.unsplash.com/photo-1576110397661-64a019d88a98?ixlib=rb-1.2.1&auto=format&fit=crop&w=1234&q=80",
+    },
+    {
+      name: "Jessica Bell",
+      image:
+        "https://images.unsplash.com/photo-1600207438283-a5de6d9df13e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1234&q=80",
+    },
+    {
+      name: "Ryan Patrick",
+      image:
+        "https://images.unsplash.com/photo-1581824283135-0666cf353f35?ixlib=rb-1.2.1&auto=format&fit=crop&w=1276&q=80",
+    },
+    {
+      name: "Tina Cate",
+      image:
+        "https://images.unsplash.com/photo-1542596594-649edbc13630?ixlib=rb-1.2.1&auto=format&fit=crop&w=1234&q=80",
+    },
+  ];
+
+  return (
+    <div className="min-h-[50vh]">
+      <div className="border-solid border-red-50 mx-2 ">
+        <div className="flex flex-col items-center p-8 w-full h-full">
+          <div className="w-full h-full flex flex-wrap rounded-lg overflow-hidden gap-1 justify-center">
+            {participants.map((participant, index) => (
+              <div
+                key={index}
+                className="relative w-1/3 h-1/2 flex-shrink-0 bg-gray-100"
+              >
+                <img
+                  src={participant.image}
+                  alt={participant.name}
+                  className="object-cover w-full h-full"
+                />
+                <div className="absolute top-3 left-3 flex space-x-2">
+                  <MicOff />
+                  <CameraOff />
+                </div>
+                <span className="absolute bottom-3 right-3 bg-opacity-50 bg-gray-800 text-white text-sm px-3 py-1 rounded-lg">
+                  {participant.name}
+                </span>
+              </div>
+            ))}
+          </div>
+
+        </div>
       </div>
 
       <div className="fixed bottom-0 left-0 z-50 grid w-full h-16 grid-cols-1 px-8 bg-white border-t border-gray-200 md:grid-cols-3 dark:bg-gray-700 dark:border-gray-600">
