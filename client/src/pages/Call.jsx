@@ -9,40 +9,40 @@ export default function Call() {
         "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
     },
     {
-        name: "Andy Will",
-        image:
-          "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
-      },
-      {
-        name: "Andy Will",
-        image:
-          "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
-      },
-      {
-        name: "Andy Will",
-        image:
-          "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
-      },
-      {
-        name: "Andy Will",
-        image:
-          "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
-      },
-      {
-        name: "Andy Will",
-        image:
-          "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
-      },
-      {
-        name: "Andy Will",
-        image:
-          "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
-      },
-      {
-        name: "Andy Will",
-        image:
-          "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
-      },
+      name: "Andy Will",
+      image:
+        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
+    },
+    {
+      name: "Andy Will",
+      image:
+        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
+    },
+    {
+      name: "Andy Will",
+      image:
+        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
+    },
+    {
+      name: "Andy Will",
+      image:
+        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
+    },
+    {
+      name: "Andy Will",
+      image:
+        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
+    },
+    {
+      name: "Andy Will",
+      image:
+        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
+    },
+    {
+      name: "Andy Will",
+      image:
+        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
+    },
     {
       name: "Emmy Lou",
       image:
@@ -78,7 +78,7 @@ export default function Call() {
             {participants.map((participant, index) => (
               <div
                 key={index}
-                className="relative w-1/3 h-1/2 flex-shrink-0 bg-gray-100"
+                className="relative w-1/3 h-1/2 sm:w-1/4 sm:h-1/3 md:w-1/5 md:h-1/6 flex-shrink-0 bg-gray-10 rounded-lg overflow-clip"
               >
                 <img
                   src={participant.image}
@@ -86,8 +86,12 @@ export default function Call() {
                   className="object-cover w-full h-full"
                 />
                 <div className="absolute top-3 left-3 flex space-x-2">
-                  <MicOff />
-                  <CameraOff />
+                  <Button  variant="secondary"  size="xs">
+                    <MicOff />
+                  </Button>
+                  <Button variant="secondary"  size="xs">
+                    <CameraOff />
+                  </Button>
                 </div>
                 <span className="absolute bottom-3 right-3 bg-opacity-50 bg-gray-800 text-white text-sm px-3 py-1 rounded-lg">
                   {participant.name}
@@ -95,7 +99,6 @@ export default function Call() {
               </div>
             ))}
           </div>
-
         </div>
       </div>
 
