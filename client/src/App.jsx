@@ -4,7 +4,7 @@ import HomePage from "./pages/Home";
 import Layout from "./pages/Layout";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
+// import ProtectedRoute from "./components/ProtectedRoute";
 import Signin from "./pages/Signin";
 import Logout from "./pages/Logout";
 import { AnimatePresence } from "framer-motion";
@@ -13,8 +13,12 @@ import Settings from "./pages/Settings";
 import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
 import Call from "./pages/Call";
-
+// import { ConnectionState } from './components/ConnectionState';
+import { ConnectionManager } from './components/ConnectionManager';
+// import { Events } from "./components/Events";
+// import { MyForm } from './components/MyForm';
 function App() {
+
   return (
     <>
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
@@ -25,9 +29,10 @@ function App() {
                 <Route path="/" element={<Layout />}>
                   <Route index element={<HomePage />} />
                   <Route path="/home" element={<HomePage />} />
-                  <Route path="/call" element={<Call />} />
+                  <Route path="/call/:id" element={<Call />} />
                   <Route path="/signin" element={<Signin />} />
                   <Route path="/signout" element={<Logout />} />
+                  <Route path="/conn" element={<ConnectionManager />} />
                   {/* <Route
                     path="/equbes"
                     element={

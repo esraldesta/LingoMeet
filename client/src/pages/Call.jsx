@@ -1,100 +1,189 @@
-import { CameraOff, MicOff } from "lucide-react";
+import { CameraOff, MicOff, Camera, Mic } from "lucide-react";
 import { Button } from "../components/ui/button";
+import { useEffect, useRef, useState } from "react";
+import { Peer } from "peerjs";
+import { io } from "socket.io-client";
+import { useParams } from "react-router";
 
 export default function Call() {
-  const participants = [
-    {
-      name: "Andy Will",
-      image:
-        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
-    },
-    {
-      name: "Andy Will",
-      image:
-        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
-    },
-    {
-      name: "Andy Will",
-      image:
-        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
-    },
-    {
-      name: "Andy Will",
-      image:
-        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
-    },
-    {
-      name: "Andy Will",
-      image:
-        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
-    },
-    {
-      name: "Andy Will",
-      image:
-        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
-    },
-    {
-      name: "Andy Will",
-      image:
-        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
-    },
-    {
-      name: "Andy Will",
-      image:
-        "https://images.unsplash.com/photo-1566821582776-92b13ab46bb4?ixlib=rb-1.2.1&auto=format&fit=crop&w=900&q=60",
-    },
-    {
-      name: "Emmy Lou",
-      image:
-        "https://images.unsplash.com/photo-1500917293891-ef795e70e1f6?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1650&q=80",
-    },
-    {
-      name: "Tim Russel",
-      image:
-        "https://images.unsplash.com/photo-1576110397661-64a019d88a98?ixlib=rb-1.2.1&auto=format&fit=crop&w=1234&q=80",
-    },
-    {
-      name: "Jessica Bell",
-      image:
-        "https://images.unsplash.com/photo-1600207438283-a5de6d9df13e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1234&q=80",
-    },
-    {
-      name: "Ryan Patrick",
-      image:
-        "https://images.unsplash.com/photo-1581824283135-0666cf353f35?ixlib=rb-1.2.1&auto=format&fit=crop&w=1276&q=80",
-    },
-    {
-      name: "Tina Cate",
-      image:
-        "https://images.unsplash.com/photo-1542596594-649edbc13630?ixlib=rb-1.2.1&auto=format&fit=crop&w=1234&q=80",
-    },
-  ];
+  const [conn, setConn] = useState();
+  const [isConnected, setIsConnected] = useState(false);
+  const { id: roomId } = useParams();
+  const [participants, setParticipants] = useState([]);
+  const myVideoRef = useRef();
+  const [peerConnections, setPeerConnections] = useState({});
+  const [stream, setStream] = useState(null);
+  const [isMuted, setIsMuted] = useState(false); // For microphone mute/unmute
+  const [isVideoEnabled, setIsVideoEnabled] = useState(true); // For enabling/disabling video
+
+  const placeholderImage = "https://via.placeholder.com/150"; // Placeholder image
+
+  useEffect(() => {
+    const peer = new Peer();
+    const URL = "http://localhost:3000";
+    const connectionOptions = {
+      "force new connection": true,
+      reconnectionAttempts: "Infinity",
+      timeout: 10000,
+      transports: ["websocket"],
+    };
+    const socket = io(URL, connectionOptions);
+
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: true })
+      .then((mediaStream) => {
+        setStream(mediaStream);
+        if (myVideoRef.current) {
+          myVideoRef.current.srcObject = mediaStream;
+        }
+
+        peer.on("open", (peerId) => {
+          setConn(peerId);
+          socket.emit("join-room", roomId, peerId);
+          setIsConnected(true);
+        });
+
+        peer.on("call", (call) => {
+          call.answer(mediaStream);
+          call.on("stream", (userVideoStream) => {
+            addParticipantStream(call.peer, userVideoStream);
+          });
+        });
+
+        socket.on("user-connected", (userId) => {
+          const call = peer.call(userId, mediaStream);
+          call.on("stream", (userVideoStream) => {
+            addParticipantStream(userId, userVideoStream);
+          });
+        });
+
+        socket.on("video-state-changed", ({ userId, isVideoEnabled }) => {
+          setParticipants((prevParticipants) =>
+            prevParticipants.map((p) =>
+              p.id === userId ? { ...p, isVideoEnabled } : p
+            )
+          );
+        });
+      });
+
+    socket.on("user-disconnected", (userId) => {
+      if (peerConnections[userId]) {
+        peerConnections[userId].close();
+        removeParticipantStream(userId);
+      }
+    });
+
+    return () => {
+      peer.disconnect();
+      peer.destroy();
+      socket.disconnect();
+    };
+  }, [roomId]);
+
+  const addParticipantStream = (userId, stream) => {
+    setParticipants((prevParticipants) => [
+      ...prevParticipants,
+      { id: userId, stream, isVideoEnabled: true },
+    ]);
+  };
+
+  const removeParticipantStream = (userId) => {
+    setParticipants((prevParticipants) =>
+      prevParticipants.filter((p) => p.id !== userId)
+    );
+  };
+
+  const toggleMute = () => {
+    const audioTrack = stream.getAudioTracks()[0];
+    if (audioTrack) {
+      audioTrack.enabled = !audioTrack.enabled;
+      setIsMuted(!audioTrack.enabled);
+    }
+  };
+
+  const toggleVideo = () => {
+    const videoTrack = stream.getVideoTracks()[0];
+    if (videoTrack) {
+      videoTrack.enabled = !videoTrack.enabled;
+      setIsVideoEnabled(videoTrack.enabled);
+    }
+  };
+
+  const endCall = () => {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop()); // Stop all media tracks
+    }
+    window.location.href = "/"; // Redirect or handle call end
+  };
 
   return (
     <div className="min-h-[50vh]">
-      <div className="border-solid border-red-50 mx-2 ">
+      <div className="border-solid border-red-50 mx-2">
         <div className="flex flex-col items-center p-8 w-full h-full">
           <div className="w-full h-full flex flex-wrap rounded-lg overflow-hidden gap-1 justify-center">
+            <div className="relative w-1/3 h-1/2 sm:w-1/4 sm:h-1/3 md:w-1/5 md:h-1/6 flex-shrink-0 bg-gray-10 rounded-lg overflow-clip">
+              <video
+                ref={myVideoRef}
+                autoPlay
+                muted
+                className="object-cover w-full h-full"
+              />
+
+              <span className="absolute bottom-3 right-3 bg-opacity-50 bg-gray-800 text-white text-sm px-3 py-1 rounded-lg">
+                You
+              </span>
+            </div>
+
             {participants.map((participant, index) => (
               <div
-                key={index}
+                key={participant.id || index}
                 className="relative w-1/3 h-1/2 sm:w-1/4 sm:h-1/3 md:w-1/5 md:h-1/6 flex-shrink-0 bg-gray-10 rounded-lg overflow-clip"
               >
-                <img
-                  src={participant.image}
-                  alt={participant.name}
-                  className="object-cover w-full h-full"
-                />
+                {participant.isVideoEnabled ? (
+                  <video
+                    autoPlay
+                    playsInline
+                    ref={(el) => {
+                      if (el) el.srcObject = participant.stream;
+                    }}
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  <img
+                    src={placeholderImage}
+                    alt="Placeholder"
+                    className="object-cover w-full h-full"
+                  />
+                )}
                 <div className="absolute top-3 left-3 flex space-x-2">
-                  <Button  variant="secondary"  size="xs">
-                    <MicOff />
-                  </Button>
-                  <Button variant="secondary"  size="xs">
-                    <CameraOff />
-                  </Button>
+                  <button
+                    type="button"
+                    className="p-2 bg-muted rounded-full"
+
+                    onClick={toggleMute}
+                  >
+                    {isMuted ? (
+                      <MicOff className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
+                    ) : (
+                      <Mic className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
+                    )}
+                    <span className="sr-only">Mute/Unmute</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="p-2 bg-muted rounded-full"
+                    onClick={toggleVideo}
+                  >
+                    {isVideoEnabled ? (
+                      <CameraOff className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
+                    ) : (
+                      <Camera className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
+                    )}
+                    <span className="sr-only">Disable/Enable Video</span>
+                  </button>
                 </div>
                 <span className="absolute bottom-3 right-3 bg-opacity-50 bg-gray-800 text-white text-sm px-3 py-1 rounded-lg">
-                  {participant.name}
+                  {participant.name || "Participant"}
                 </span>
               </div>
             ))}
@@ -102,248 +191,61 @@ export default function Call() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 z-50 grid w-full h-16 grid-cols-1 px-8 bg-white border-t border-gray-200 md:grid-cols-3 dark:bg-gray-700 dark:border-gray-600">
-        <div className="items-center justify-center hidden text-gray-500 dark:text-gray-400 me-auto md:flex">
-          <svg
-            className="w-3 h-3 me-2"
-            aria-hidden="true"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path d="M10 0a10 10 0 1 0 10 10A10.011 10.011 0 0 0 10 0Zm3.982 13.982a1 1 0 0 1-1.414 0l-3.274-3.274A1.012 1.012 0 0 1 9 10V6a1 1 0 0 1 2 0v3.586l2.982 2.982a1 1 0 0 1 0 1.414Z" />
-          </svg>
-          <span className="text-sm">12:43 PM</span>
-        </div>
-        <div className="flex items-center justify-center mx-auto">
+      {/* Bottom Section for controls */}
+      <div className="fixed z-50 w-full h-16 max-w-lg -translate-x-1/2 bg-white border border-gray-200 rounded-t-full -bottom-1 left-1/2 dark:bg-gray-700 dark:border-gray-600 overflow-hidden">
+        <div className="flex h-full max-w-lg justify-between mx-auto">
+          {/* Mute/Unmute */}
           <button
-            data-tooltip-target="tooltip-microphone"
             type="button"
-            className="p-2.5 group bg-gray-100 rounded-full hover:bg-gray-200 me-4 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-800 dark:bg-gray-600 dark:hover:bg-gray-800"
+            className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 dark:hover:bg-gray-800 group pl-16"
+            onClick={toggleMute}
           >
-            <svg
-              className="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor"
-              viewBox="0 0 16 19"
-            >
-              <path d="M15 5a1 1 0 0 0-1 1v3a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V6a1 1 0 0 0-2 0v3a6.006 6.006 0 0 0 6 6h1v2H5a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2H9v-2h1a6.006 6.006 0 0 0 6-6V6a1 1 0 0 0-1-1Z" />
-              <path d="M9 0H7a3 3 0 0 0-3 3v5a3 3 0 0 0 3 3h2a3 3 0 0 0 3-3V3a3 3 0 0 0-3-3Z" />
-            </svg>
-            <span className="sr-only">Mute microphone</span>
+            {isMuted ? (
+              <MicOff className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
+            ) : (
+              <Mic className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
+            )}
+            <span className="sr-only">Mute/Unmute</span>
           </button>
-          <div
-            id="tooltip-microphone"
-            role="tooltip"
-            className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700"
-          >
-            Mute microphone
-            <div className="tooltip-arrow" data-popper-arrow></div>
+
+          {/* End Call */}
+          <div className="flex items-center justify-center">
+            <button
+              type="button"
+              onClick={endCall}
+              className="inline-flex items-center justify-center w-10 h-10 font-medium bg-red-50 rounded-full hover:bg-red-700 group"
+            >
+              <svg
+                width="185px"
+                height="185px"
+                viewBox="-4.56 -4.56 33.12 33.12"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                stroke="#f52929"
+                strokeWidth="0.00024000000000000003"
+              >
+                <path
+                  d="M8 13.4782L8 12.8617C8 12.8617 8 11.3963 12 11.3963C16 11.3963 16 12.8617 16 12.8617V13.25C16 14.2064 16.7227 15.0192 17.7004 15.1625L19.7004 15.4556C20.9105 15.6329 22 14.7267 22 13.5429V11.4183C22 10.8313 21.8162 10.2542 21.3703 9.85601C20.2296 8.83732 17.4208 7 12 7C6.25141 7 3.44027 9.58269 2.44083 10.7889C2.1247 11.1704 2 11.6525 2 12.1414L2 14.0643C2 15.3623 3.29561 16.292 4.57997 15.9156L6.57997 15.3295C7.42329 15.0823 8 14.3305 8 13.4782Z"
+                  fill="#f2240d"
+                ></path>
+              </svg>
+              <span className="sr-only">End Call</span>
+            </button>
           </div>
+
+          {/* Disable/Enable Video */}
           <button
-            data-tooltip-target="tooltip-camera"
             type="button"
-            className="p-2.5 bg-gray-100 group rounded-full hover:bg-gray-200 me-4 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-800 dark:bg-gray-600 dark:hover:bg-gray-800"
+            className="inline-flex flex-col items-center justify-center px-5 hover:bg-gray-50 dark:hover:bg-gray-800 group pr-16"
+            onClick={toggleVideo}
           >
-            <svg
-              className="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor"
-              viewBox="0 0 20 14"
-            >
-              <path d="M11 0H2a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2Zm8.585 1.189a.994.994 0 0 0-.9-.138l-2.965.983a1 1 0 0 0-.685.949v8a1 1 0 0 0 .675.946l2.965 1.02a1.013 1.013 0 0 0 1.032-.242A1 1 0 0 0 20 12V2a1 1 0 0 0-.415-.811Z" />
-            </svg>
-            <span className="sr-only">Hide camera</span>
+            {isVideoEnabled ? (
+              <CameraOff className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
+            ) : (
+              <Camera className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
+            )}
+            <span className="sr-only">Disable/Enable Video</span>
           </button>
-          <div
-            id="tooltip-camera"
-            role="tooltip"
-            className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700"
-          >
-            Hide camera
-            <div className="tooltip-arrow" data-popper-arrow></div>
-          </div>
-          <button
-            data-tooltip-target="tooltip-feedback"
-            type="button"
-            className="p-2.5 bg-gray-100 group rounded-full hover:bg-gray-200 me-4 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-800 dark:bg-gray-600 dark:hover:bg-gray-800"
-          >
-            <svg
-              className="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM13.5 6a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm-7 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm3.5 9.5A5.5 5.5 0 0 1 4.6 11h10.81A5.5 5.5 0 0 1 10 15.5Z" />
-            </svg>
-            <span className="sr-only">Share feedback</span>
-          </button>
-          <div
-            id="tooltip-feedback"
-            role="tooltip"
-            className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700"
-          >
-            Share feedback
-            <div className="tooltip-arrow" data-popper-arrow></div>
-          </div>
-          <button
-            data-tooltip-target="tooltip-settings"
-            type="button"
-            className="p-2.5 bg-gray-100 group rounded-full me-4 md:me-0 hover:bg-gray-200 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-800 dark:bg-gray-600 dark:hover:bg-gray-800"
-          >
-            <svg
-              className="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 20 20"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 12.25V1m0 11.25a2.25 2.25 0 0 0 0 4.5m0-4.5a2.25 2.25 0 0 1 0 4.5M4 19v-2.25m6-13.5V1m0 2.25a2.25 2.25 0 0 0 0 4.5m0-4.5a2.25 2.25 0 0 1 0 4.5M10 19V7.75m6 4.5V1m0 11.25a2.25 2.25 0 1 0 0 4.5 2.25 2.25 0 0 0 0-4.5ZM16 19v-2"
-              />
-            </svg>
-            <span className="sr-only">Video settings</span>
-          </button>
-          <div
-            id="tooltip-settings"
-            role="tooltip"
-            className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700"
-          >
-            Video settings
-            <div className="tooltip-arrow" data-popper-arrow></div>
-          </div>
-          <button
-            id="moreOptionsDropdownButton"
-            data-dropdown-toggle="moreOptionsDropdown"
-            type="button"
-            className="p-2.5 bg-gray-100 md:hidden group rounded-full hover:bg-gray-200 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-800 dark:bg-gray-600 dark:hover:bg-gray-800"
-          >
-            <svg
-              className="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor"
-              viewBox="0 0 4 15"
-            >
-              <path d="M3.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 6.041a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 5.959a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z" />
-            </svg>
-            <span className="sr-only">Show options</span>
-          </button>
-          <div
-            id="moreOptionsDropdown"
-            className="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600"
-          >
-            <ul
-              className="py-2 text-sm text-gray-700 dark:text-gray-200"
-              aria-labelledby="moreOptionsDropdownButton"
-            >
-              <li>
-                <a
-                  href="#"
-                  className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                >
-                  Show participants
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                >
-                  Adjust volume
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                >
-                  Show information
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div className="items-center justify-center hidden ms-auto md:flex">
-          <button
-            data-tooltip-target="tooltip-participants"
-            type="button"
-            className="p-2.5 group rounded-full hover:bg-gray-100 me-1 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:hover:bg-gray-600"
-          >
-            <svg
-              className="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor"
-              viewBox="0 0 20 18"
-            >
-              <path d="M14 2a3.963 3.963 0 0 0-1.4.267 6.439 6.439 0 0 1-1.331 6.638A4 4 0 1 0 14 2Zm1 9h-1.264A6.957 6.957 0 0 1 15 15v2a2.97 2.97 0 0 1-.184 1H19a1 1 0 0 0 1-1v-1a5.006 5.006 0 0 0-5-5ZM6.5 9a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9ZM8 10H5a5.006 5.006 0 0 0-5 5v2a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-2a5.006 5.006 0 0 0-5-5Z" />
-            </svg>
-            <span className="sr-only">Show participants</span>
-          </button>
-          <div
-            id="tooltip-participants"
-            role="tooltip"
-            className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700"
-          >
-            Show participants
-            <div className="tooltip-arrow" data-popper-arrow></div>
-          </div>
-          <button
-            data-tooltip-target="tooltip-volume"
-            type="button"
-            className="p-2.5 group rounded-full hover:bg-gray-100 me-1 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:hover:bg-gray-600"
-          >
-            <svg
-              className="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor"
-              viewBox="0 0 20 18"
-            >
-              <path d="M10.836.357a1.978 1.978 0 0 0-2.138.3L3.63 5H2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h1.63l5.07 4.344a1.985 1.985 0 0 0 2.142.299A1.98 1.98 0 0 0 12 15.826V2.174A1.98 1.98 0 0 0 10.836.357Zm2.728 4.695a1.001 1.001 0 0 0-.29 1.385 4.887 4.887 0 0 1 0 5.126 1 1 0 0 0 1.674 1.095A6.645 6.645 0 0 0 16 9a6.65 6.65 0 0 0-1.052-3.658 1 1 0 0 0-1.384-.29Zm4.441-2.904a1 1 0 0 0-1.664 1.11A10.429 10.429 0 0 1 18 9a10.465 10.465 0 0 1-1.614 5.675 1 1 0 1 0 1.674 1.095A12.325 12.325 0 0 0 20 9a12.457 12.457 0 0 0-1.995-6.852Z" />
-            </svg>
-            <span className="sr-only">Adjust volume</span>
-          </button>
-          <div
-            id="tooltip-volume"
-            role="tooltip"
-            className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700"
-          >
-            Adjust volume
-            <div className="tooltip-arrow" data-popper-arrow></div>
-          </div>
-          <button
-            data-tooltip-target="tooltip-information"
-            type="button"
-            className="p-2.5 group rounded-full hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-600 dark:hover:bg-gray-600"
-          >
-            <svg
-              className="w-4 h-4 text-gray-500 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
-            </svg>
-            <span className="sr-only">Show information</span>
-          </button>
-          <div
-            id="tooltip-information"
-            role="tooltip"
-            className="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white transition-opacity duration-300 bg-gray-900 rounded-lg shadow-sm opacity-0 tooltip dark:bg-gray-700"
-          >
-            Show information
-            <div className="tooltip-arrow" data-popper-arrow></div>
-          </div>
         </div>
       </div>
     </div>
