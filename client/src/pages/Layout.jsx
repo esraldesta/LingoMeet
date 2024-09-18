@@ -1,6 +1,5 @@
 import { Outlet, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { useContext } from "react";
 import { ModeToggle } from "../components/toggle/mode-toggle";
 import { LangToggle } from "../components/toggle/lang-toggle";
 import { Toaster } from "../components/ui/toaster";
@@ -22,7 +21,6 @@ import { useTranslation } from "react-i18next";
 import { CreateGroup } from "../components/dialogs/CreateGroup";
 
 const Layout = () => {
-  const { state } = useContext(AuthContext);
   const { t } = useTranslation("global");
 
   return (
