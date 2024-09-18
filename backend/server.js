@@ -6,7 +6,6 @@ const app = express();
 app.use(cors());
 app.use(express.json())
 
-app.use(groupRouter)
 app.use('/api/v1', groupRouter);
 
 main().catch(err => console.log(err));
