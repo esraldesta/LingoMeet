@@ -6,6 +6,8 @@ import {
   PopoverTrigger,
 } from "../components/ui/popover";
 import { Ellipsis } from "lucide-react";
+import { useEffect, useState } from "react";
+import API from "../api/axios";
 
 // AvatarGroup component
 const AvatarGroup = ({ avatars, max }) => {
@@ -32,11 +34,11 @@ const AvatarGroup = ({ avatars, max }) => {
 };
 
 // GroupCard component
-const GroupCard = ({ groupName, avatars, max }) => {
+const GroupCard = ({ group, avatars, max }) => {
   return (
     <div className="bg-secondary shadow-md rounded-lg p-1 flex flex-col justify-between w-[300px] max-w-sm m-4">
       <div className="grid grid-cols-2">
-        <h2 className="text-lg font-semibold mb-4">{groupName}</h2>
+        <h2 className="text-lg font-semibold mb-4">{group.title}</h2>
 
         <div className="flex justify-end items-start mr-2">
           <Popover>
@@ -71,7 +73,10 @@ const GroupCard = ({ groupName, avatars, max }) => {
       <AvatarGroup avatars={avatars} max={max} />
 
       {/* Join button */}
-      <Link to="/call" className="mt-4 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg">
+      <Link
+        to={`/call/${group._id}`}
+        className="mt-4 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg"
+      >
         Join
       </Link>
     </div>
@@ -80,102 +85,114 @@ const GroupCard = ({ groupName, avatars, max }) => {
 
 // App component (example usage)
 const Home = () => {
-  const groups = [
-    {
-      name: "Group A",
-      avatars: [
-        { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
-        { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
-        { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
-        { name: "Prosper Otemuyiwa", src: "https://bit.ly/prosper-baba" },
-        { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
-      ],
-    },
+  // const groups = [
+  //   {
+  //     name: "Group A",
+  //     avatars: [
+  //       { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
+  //       { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
+  //       { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
+  //       { name: "Prosper Otemuyiwa", src: "https://bit.ly/prosper-baba" },
+  //       { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
+  //     ],
+  //   },
 
-    {
-      name: "Group A",
-      avatars: [
-        { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
-        { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
-        { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
-        { name: "Prosper Otemuyiwa", src: "https://bit.ly/prosper-baba" },
-        { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
-      ],
-    },
+  //   {
+  //     name: "Group A",
+  //     avatars: [
+  //       { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
+  //       { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
+  //       { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
+  //       { name: "Prosper Otemuyiwa", src: "https://bit.ly/prosper-baba" },
+  //       { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
+  //     ],
+  //   },
 
-    {
-      name: "Group A",
-      avatars: [
-        { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
-        { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
-        { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
-        { name: "Prosper Otemuyiwa", src: "https://bit.ly/prosper-baba" },
-        { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
-      ],
-    }
-    ,
+  //   {
+  //     name: "Group A",
+  //     avatars: [
+  //       { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
+  //       { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
+  //       { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
+  //       { name: "Prosper Otemuyiwa", src: "https://bit.ly/prosper-baba" },
+  //       { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
+  //     ],
+  //   }
+  //   ,
 
-    ,
+  //   ,
 
-    {
-      name: "Group A",
-      avatars: [
-        { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
-        { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
-        { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
-        { name: "Prosper Otemuyiwa", src: "https://bit.ly/prosper-baba" },
-        { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
-      ],
-    }
+  //   {
+  //     name: "Group A",
+  //     avatars: [
+  //       { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
+  //       { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
+  //       { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
+  //       { name: "Prosper Otemuyiwa", src: "https://bit.ly/prosper-baba" },
+  //       { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
+  //     ],
+  //   }
 
-    ,
+  //   ,
 
-    {
-      name: "Group A",
-      avatars: [
-        { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
-        { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
-        { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
-        { name: "Prosper Otemuyiwa", src: "https://bit.ly/prosper-baba" },
-        { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
-      ],
-    }
+  //   {
+  //     name: "Group A",
+  //     avatars: [
+  //       { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
+  //       { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
+  //       { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
+  //       { name: "Prosper Otemuyiwa", src: "https://bit.ly/prosper-baba" },
+  //       { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
+  //     ],
+  //   }
 
-    ,
+  //   ,
 
-    {
-      name: "Group A",
-      avatars: [
-        { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
-        { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
-        { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
-        { name: "Prosper Otemuyiwa", src: "https://bit.ly/prosper-baba" },
-        { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
-      ],
-    }
+  //   {
+  //     name: "Group A",
+  //     avatars: [
+  //       { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
+  //       { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
+  //       { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
+  //       { name: "Prosper Otemuyiwa", src: "https://bit.ly/prosper-baba" },
+  //       { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
+  //     ],
+  //   }
 
-    ,
+  //   ,
 
-    {
-      name: "Group A",
-      avatars: [
-        { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
-        { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
-        { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
-        { name: "Prosper Otemuyiwa", src: "https://bit.ly/prosper-baba" },
-        { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
-      ],
-    },
-    {
-      name: "Group B",
-      avatars: [
-        { name: "Alice", src: "https://bit.ly/alice-profile" },
-        { name: "Bob", src: "https://bit.ly/bob-profile" },
-        { name: "Charlie", src: "https://bit.ly/charlie-profile" },
-      ],
-    },
-  ];
+  //   {
+  //     name: "Group A",
+  //     avatars: [
+  //       { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
+  //       { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
+  //       { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
+  //       { name: "Prosper Otemuyiwa", src: "https://bit.ly/prosper-baba" },
+  //       { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
+  //     ],
+  //   },
+  //   {
+  //     name: "Group B",
+  //     avatars: [
+  //       { name: "Alice", src: "https://bit.ly/alice-profile" },
+  //       { name: "Bob", src: "https://bit.ly/bob-profile" },
+  //       { name: "Charlie", src: "https://bit.ly/charlie-profile" },
+  //     ],
+  //   },
+  // ];
+  const [groups, setGroups] = useState([]);
 
+  useEffect(() => {
+    API.get("/")
+      .then((res) => {
+        console.log("res.data", res.data.data);
+
+        setGroups(res.data.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, []);
   return (
     <div>
       <form className="max-w-md mx-auto">
@@ -219,24 +236,33 @@ const Home = () => {
         </div>
       </form>
       <div className="flex gap-1 justify-center pt-2">
-      <Button size="xs" >Eng</Button>
-        <Button size="xs" >Eng</Button>
-        <Button size="xs" >Eng</Button>
-        <Button size="xs" >Eng</Button>
-        <Button size="xs" >Eng</Button>
-        <Button size="xs" >Eng</Button>
-        <Button size="xs" >Eng</Button>
+        <Button size="xs">Eng</Button>
+        <Button size="xs">Eng</Button>
+        <Button size="xs">Eng</Button>
+        <Button size="xs">Eng</Button>
+        <Button size="xs">Eng</Button>
+        <Button size="xs">Eng</Button>
       </div>
 
       <div className="flex flex-wrap justify-center">
-        {groups.map((group, index) => (
-          <GroupCard
-            key={index}
-            groupName={group.name}
-            avatars={group.avatars}
-            max={3} // Customize how many avatars to show
-          />
-        ))}
+        {groups &&
+          groups.map((group, index) => (
+            <GroupCard
+              key={index}
+              group={group}
+              avatars={[
+                { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
+                { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
+                { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
+                {
+                  name: "Prosper Otemuyiwa",
+                  src: "https://bit.ly/prosper-baba",
+                },
+                { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
+              ]}
+              max={3} // Customize how many avatars to show
+            />
+          ))}
       </div>
     </div>
   );

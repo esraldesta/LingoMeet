@@ -8,7 +8,7 @@ export const setLogoutFunction = (logout) => {
 
 const API = axios.create({
   // TODO: replace URL value from env
-  baseURL: "https://ekub-backend-pws7.onrender.com/api/v1",
+  baseURL: "http://localhost:3000/api/v1",
 });
 
 // Request interceptor
