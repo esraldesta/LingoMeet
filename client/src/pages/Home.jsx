@@ -184,6 +184,8 @@ const Home = () => {
   const { groups,setGroups } = useGroups();
 
   useEffect(() => {
+    console.log("hihi");
+    
     API.get("/")
       .then((res) => {
         console.log("res.data", res.data.data);
@@ -191,7 +193,7 @@ const Home = () => {
         setGroups(res.data.data);
       })
       .catch((err) => {
-        console.log(err);
+        console.log("err",err);
       });
   }, []);
   return (

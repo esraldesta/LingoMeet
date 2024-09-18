@@ -20,7 +20,7 @@ export default function Call() {
 
   useEffect(() => {
     const peer = new Peer();
-    const URL = "https://talkmate.onrender.com";
+    const URL = "https://talkmate.onrender.com/";
     const connectionOptions = {
       "force new connection": true,
       reconnectionAttempts: "Infinity",
