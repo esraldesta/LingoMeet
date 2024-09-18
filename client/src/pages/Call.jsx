@@ -83,8 +83,8 @@ export default function Call() {
     socket.on("user-disconnected", (userId) => {
       if (peerConnections[userId]) {
         peerConnections[userId].close();
-        removeParticipantStream(userId);
       }
+      removeParticipantStream(userId);
     });
 
     return () => {
@@ -155,7 +155,7 @@ export default function Call() {
             </div>
 
             {participants.map((participant, index) => (
-                <ParticipantVideo key={index} participant={participant} />
+              <ParticipantVideo key={index} participant={participant} />
             ))}
           </div>
         </div>
