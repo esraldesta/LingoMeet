@@ -1,9 +1,9 @@
-import { CameraOff, MicOff, Camera, Mic } from "lucide-react";
-import { Button } from "../components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { Peer } from "peerjs";
 import { io } from "socket.io-client";
 import { useParams } from "react-router";
+import { Camera, CameraOff, Mic, MicOff } from "lucide-react";
+import ParticipantVideo from "./ParticipantVideo";
 
 export default function Call() {
   const [conn, setConn] = useState();
@@ -44,17 +44,31 @@ export default function Call() {
         });
 
         peer.on("call", (call) => {
-          call.answer(mediaStream);
-          call.on("stream", (userVideoStream) => {
-            addParticipantStream(call.peer, userVideoStream);
-          });
+          // Avoid answering multiple calls for the same user
+          if (!peerConnections[call.peer]) {
+            call.answer(mediaStream);
+            call.on("stream", (userVideoStream) => {
+              addParticipantStream(call.peer, userVideoStream);
+            });
+            setPeerConnections((prevConnections) => ({
+              ...prevConnections,
+              [call.peer]: call,
+            }));
+          }
         });
 
         socket.on("user-connected", (userId) => {
-          const call = peer.call(userId, mediaStream);
-          call.on("stream", (userVideoStream) => {
-            addParticipantStream(userId, userVideoStream);
-          });
+          // Avoid calling users already connected
+          if (!peerConnections[userId]) {
+            const call = peer.call(userId, mediaStream);
+            call.on("stream", (userVideoStream) => {
+              addParticipantStream(userId, userVideoStream);
+            });
+            setPeerConnections((prevConnections) => ({
+              ...prevConnections,
+              [userId]: call,
+            }));
+          }
         });
 
         socket.on("video-state-changed", ({ userId, isVideoEnabled }) => {
@@ -81,10 +95,16 @@ export default function Call() {
   }, [roomId]);
 
   const addParticipantStream = (userId, stream) => {
-    setParticipants((prevParticipants) => [
-      ...prevParticipants,
-      { id: userId, stream, isVideoEnabled: true },
-    ]);
+    // Check if the participant is already added
+    setParticipants((prevParticipants) => {
+      if (prevParticipants.find((p) => p.id === userId)) {
+        return prevParticipants; // Do not add if already exists
+      }
+      return [
+        ...prevParticipants,
+        { id: userId, stream, isVideoEnabled: true },
+      ];
+    });
   };
 
   const removeParticipantStream = (userId) => {
@@ -135,57 +155,7 @@ export default function Call() {
             </div>
 
             {participants.map((participant, index) => (
-              <div
-                key={participant.id || index}
-                className="relative w-1/3 h-1/2 sm:w-1/4 sm:h-1/3 md:w-1/5 md:h-1/6 flex-shrink-0 bg-gray-10 rounded-lg overflow-clip"
-              >
-                {participant.isVideoEnabled ? (
-                  <video
-                    autoPlay
-                    playsInline
-                    ref={(el) => {
-                      if (el) el.srcObject = participant.stream;
-                    }}
-                    className="object-cover w-full h-full"
-                  />
-                ) : (
-                  <img
-                    src={placeholderImage}
-                    alt="Placeholder"
-                    className="object-cover w-full h-full"
-                  />
-                )}
-                <div className="absolute top-3 left-3 flex space-x-2">
-                  <button
-                    type="button"
-                    className="p-2 bg-muted rounded-full"
-
-                    onClick={toggleMute}
-                  >
-                    {isMuted ? (
-                      <MicOff className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
-                    ) : (
-                      <Mic className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
-                    )}
-                    <span className="sr-only">Mute/Unmute</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="p-2 bg-muted rounded-full"
-                    onClick={toggleVideo}
-                  >
-                    {isVideoEnabled ? (
-                      <CameraOff className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
-                    ) : (
-                      <Camera className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
-                    )}
-                    <span className="sr-only">Disable/Enable Video</span>
-                  </button>
-                </div>
-                <span className="absolute bottom-3 right-3 bg-opacity-50 bg-gray-800 text-white text-sm px-3 py-1 rounded-lg">
-                  {participant.name || "Participant"}
-                </span>
-              </div>
+                <ParticipantVideo key={index} participant={participant} />
             ))}
           </div>
         </div>

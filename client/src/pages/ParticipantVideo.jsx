@@ -3,6 +3,7 @@ import { Button } from "../components/ui/button";
 import { Camera, CameraOff, Mic, MicOff } from "lucide-react";
 
 export default function ParticipantVideo({participant}) {
+  
   const [isMuted, setIsMuted] = useState(false); // For microphone mute/unmute
   const [isVideoEnabled, setIsVideoEnabled] = useState(true); // For enabling/disabling video
 
@@ -18,11 +19,8 @@ export default function ParticipantVideo({participant}) {
   // Toggle video stream on/off
   const toggleVideo = () => {
     const videoTrack = participant.stream.getVideoTracks()[0];
-    console.log("videoTrack", videoTrack);
 
     if (videoTrack) {
-      console.log("videoTrack.enabled", videoTrack.enabled);
-
       videoTrack.enabled = !videoTrack.enabled; // Toggle video on or off
       setIsVideoEnabled(videoTrack.enabled);
     }

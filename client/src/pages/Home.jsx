@@ -184,8 +184,6 @@ const Home = () => {
   const { groups,setGroups } = useGroups();
 
   useEffect(() => {
-    console.log("hihi");
-    
     API.get("/")
       .then((res) => {
         console.log("res.data", res.data.data);
