@@ -8,6 +8,7 @@ import {
 import { Ellipsis } from "lucide-react";
 import { useEffect, useState } from "react";
 import API from "../api/axios";
+import { useGroups } from "../context/GroupContext";
 
 // AvatarGroup component
 const AvatarGroup = ({ avatars, max }) => {
@@ -180,7 +181,7 @@ const Home = () => {
   //     ],
   //   },
   // ];
-  const [groups, setGroups] = useState([]);
+  const { groups,setGroups } = useGroups();
 
   useEffect(() => {
     API.get("/")

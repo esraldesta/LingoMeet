@@ -1,6 +1,6 @@
 import "./App.css";
 import { ThemeProvider } from "./components/theme-provider";
-import HomePage from "./pages/Home";
+import Home from "./pages/Home";
 import Layout from "./pages/Layout";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Call from "./pages/Call";
 // import { ConnectionState } from './components/ConnectionState';
 import { ConnectionManager } from './components/ConnectionManager';
+import { GroupProvider } from "./context/GroupContext";
 // import { Events } from "./components/Events";
 // import { MyForm } from './components/MyForm';
 function App() {
@@ -23,12 +24,13 @@ function App() {
     <>
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <AuthProvider>
+          <GroupProvider>
           <AnimatePresence mode="wait">
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Layout />}>
-                  <Route index element={<HomePage />} />
-                  <Route path="/home" element={<HomePage />} />
+                  <Route index element={<Home />} />
+                  <Route path="/home" element={<Home />} />
                   <Route path="/call/:id" element={<Call />} />
                   <Route path="/signin" element={<Signin />} />
                   <Route path="/signout" element={<Logout />} />
@@ -49,6 +51,7 @@ function App() {
               </Routes>
             </BrowserRouter>
           </AnimatePresence>
+          </GroupProvider>
         </AuthProvider>
       </ThemeProvider>
     </>
