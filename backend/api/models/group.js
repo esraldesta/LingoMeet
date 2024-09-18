@@ -14,8 +14,8 @@ const Group = new Schema(
     Topic:{
       type: String,
     },
-    languages: {
-      type: [String],
+    language: {
+      type: String,
       required:true
     },
   },

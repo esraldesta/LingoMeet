@@ -12,7 +12,7 @@ app.use('/api/v1', groupRouter);
 main().catch(err => console.log(err));
 
 async function main() {
-  await mongoose.connect('mongodb://127.0.0.1:27017/talkmate');
+  await mongoose.connect('mongodb+srv://talkmate:sRvTLpyUFPloJLss@cluster0.2jhpf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
   console.log("Db Connected");
 }
 const server = require("http").Server(app);
