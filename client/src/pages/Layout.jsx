@@ -16,10 +16,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import Logo from "../components/icons/Logo";
 import { useTranslation } from "react-i18next";
 import { CreateGroup } from "../components/dialogs/CreateGroup";
 import SearchGroup from "../components/SearchGroup";
+import Logo from "../components/logo/Logo";
 
 const Layout = () => {
   const { t } = useTranslation("global");
@@ -30,7 +30,7 @@ const Layout = () => {
       <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 mb-1">
           <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-            <h2>TalkMate</h2>
+            <Logo/>
             <Link
               to="/"
               className="flex items-center gap-2 text-lg font-semibold md:text-base"
