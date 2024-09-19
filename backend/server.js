@@ -1,7 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require('mongoose');
-const groupRouter = require("./api/routers/group")
+const groupRouter = require("./api/routers/group");
+const { ConvertError, NotFound, ErrorHandler } = require("./middleware/error");
 const app = express();
 app.use(cors());
 app.use(express.json())
@@ -15,6 +16,17 @@ async function main() {
   console.log("Db Connected");
 }
 const server = require("http").Server(app);
+
+
+app.use(ConvertError);
+
+// Catch 404 and forward to error handler
+app.use(NotFound);
+
+// Error handler, send stacktrace only during development
+app.use(ErrorHandler);
+
+
 const io = require("socket.io")(server);
 
 io.on("connection", (socket) => {
