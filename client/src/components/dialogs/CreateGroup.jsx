@@ -24,20 +24,38 @@ export function CreateGroup() {
   const [title, setTitle] = useState("");
   const [Topic, setTopic] = useState("");
   const [language, setLanguage] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [open, setOpen] = useState(false);
+
   const { setGroups } = useGroups();
   const HandleSubmit = () => {
+    setIsLoading(true)
     API.post("/", {
       title,
       Topic,
       language,
     })
       .then((res) => {
+        setErrors({});
+        setIsLoading(false);
         setGroups((prevGroups) => [...prevGroups, res.data.data]);
+        setOpen(false);
         toast({
           description: "Group created successfuly",
         });
       })
-      .catch(() => {
+      .catch((err) => {
+        const responseErrors = err.response?.data.errors || [];
+        const global = err.response?.data?.message;
+        let tempErrors = {};
+        responseErrors.forEach((errorObj) => {
+          let errorMessage = errorObj.messages;
+
+          tempErrors[errorObj.field] = errorMessage;
+        });
+        setErrors({ ...tempErrors, global });
+        setIsLoading(false);
         toast({
           variant: "destructive",
           description: "Group create Failed",
@@ -45,7 +63,7 @@ export function CreateGroup() {
       });
   };
   return (
-    <AlertDialog>
+    <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
         <button
           type="button"
@@ -80,46 +98,69 @@ export function CreateGroup() {
             <Label htmlFor="title" className="text-right">
               Title
             </Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-              }}
-              className="col-span-3"
-            />
+            <div className="col-span-3">
+              <span className="block mb-1">
+                {errors.title && (
+                  <div className="text-red-600 text-xs">{errors.title}</div>
+                )}
+              </span>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                }}
+                className="col-span-3"
+              />
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="topic" className="text-right">
               Topic
             </Label>
-            <Input
-              id="topic"
-              value={Topic}
-              onChange={(e) => {
-                setTopic(e.target.value);
-              }}
-              className="col-span-3"
-            />
+            <div className="col-span-3">
+              <span className="block mb-1">
+                {errors.topic && (
+                  <div className="text-red-600 text-xs">{errors.topic}</div>
+                )}
+              </span>
+              <Input
+                id="topic"
+                value={Topic}
+                onChange={(e) => {
+                  setTopic(e.target.value);
+                }}
+                className="col-span-3"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="lang" className="text-right">
-            Language
+              Language
             </Label>
-            <Input
-              id="lang"
-              value={language}
-              onChange={(e) => {
-                setLanguage(e.target.value);
-              }}
-              className="col-span-3"
-            />
+            <div className="col-span-3">
+              <span className="block mb-1">
+                {errors.language && (
+                  <div className="text-red-600 text-xs">{errors.language}</div>
+                )}
+              </span>
+              <Input
+                id="lang"
+                value={language}
+                onChange={(e) => {
+                  setLanguage(e.target.value);
+                }}
+                className="col-span-3"
+              />
+            </div>
           </div>
         </div>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={HandleSubmit}>Continue</AlertDialogAction>
+          <Button disabled={isLoading} onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button disabled={isLoading} onClick={HandleSubmit}>Continue</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
