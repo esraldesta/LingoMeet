@@ -141,7 +141,7 @@ export default function Call() {
       <div className="border-solid border-red-50 mx-2">
         <div className="flex flex-col items-center p-8 w-full h-full">
           <div className="w-full h-full flex flex-wrap rounded-lg overflow-hidden gap-1 justify-center">
-            <div className="relative w-1/3 h-1/2 sm:w-1/4 sm:h-1/3 md:w-1/5 md:h-1/6 flex-shrink-0 bg-gray-10 rounded-lg overflow-clip">
+            <div className="relative w-full sm:w-1/2 md:w-1/4 flex-shrink-0 bg-gray-10 rounded-lg overflow-clip">
               <video
                 ref={myVideoRef}
                 autoPlay

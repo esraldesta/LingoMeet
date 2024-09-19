@@ -47,7 +47,6 @@ const AvatarGroup = ({ avatars, max }) => {
 
 // GroupCard component
 const GroupCard = ({ group, avatars, max }) => {
-  console.log("group",group);
   
   return (
     <div className="bg-secondary shadow-md rounded-lg p-1 flex flex-col justify-between w-[300px] max-w-sm m-4">

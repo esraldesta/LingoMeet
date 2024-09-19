@@ -28,8 +28,8 @@ export default function ParticipantVideo({participant}) {
   return (
     <div
       key={participant.id} // Ensure unique key
-      className="relative w-1/3 h-1/2 sm:w-1/4 sm:h-1/3 md:w-1/5 md:h-1/6 flex-shrink-0 bg-gray-10 rounded-lg overflow-clip"
-    >
+      className="relative w-full sm:w-1/2 md:w-1/3 flex-shrink-0 bg-gray-10 rounded-lg overflow-clip"
+>
       <video
         autoPlay
         playsInline
