@@ -211,7 +211,8 @@ const Home = () => {
   }, []);
   return (
     <div>
-      <div className="flex gap-1 justify-center pt-2">
+      <div className="flex gap-1 justify-end p-2 relative mt-5">
+        <span className="absolute right-2 -top-3 text-sm text-primary">Most searched languages</span>
         <Button size="xs" variant="secondary" onClick={()=>{handleSearchButton("")}}>Any</Button>
         <Button size="xs" variant="secondary" onClick={()=>{handleSearchButton("eng")}}>Eng</Button>
         <Button size="xs" variant="secondary" onClick={()=>{handleSearchButton("spa")}}>Spa</Button>
