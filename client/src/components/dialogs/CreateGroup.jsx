@@ -157,10 +157,12 @@ export function CreateGroup() {
           </div>
         </div>
         <AlertDialogFooter>
-          <Button disabled={isLoading} onClick={() => setOpen(false)}>
+                <div className="flex justify-end gap-2 items-center">
+                <Button variant="secondary" disabled={isLoading} onClick={() => setOpen(false)}>
             Cancel
           </Button>
           <Button disabled={isLoading} onClick={HandleSubmit}>Continue</Button>
+                </div>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

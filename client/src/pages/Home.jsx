@@ -9,6 +9,8 @@ import { Ellipsis } from "lucide-react";
 import { useEffect, useState } from "react";
 import API from "../api/axios";
 import { useGroups } from "../context/GroupContext";
+import { Card } from "../components/ui/card";
+import SearchGroup from "../components/SearchGroup";
 
 // AvatarGroup component
 const AvatarGroup = ({ avatars, max }) => {
@@ -181,8 +183,21 @@ const Home = () => {
   //     ],
   //   },
   // ];
-  const { groups,setGroups } = useGroups();
+  const { groups, setGroups } = useGroups();
 
+
+
+  const handleSearchButton = (word) => {
+      API.get(`/?queryName=language&searchQuery=${word}`)
+        .then((res) => {
+          console.log("res.data", res.data.data);
+
+          setGroups(res.data.data);
+        })
+        .catch((err) => {
+          console.log("err", err);
+        });
+  };
   useEffect(() => {
     API.get("/")
       .then((res) => {
@@ -191,79 +206,50 @@ const Home = () => {
         setGroups(res.data.data);
       })
       .catch((err) => {
-        console.log("err",err);
+        console.log("err", err);
       });
   }, []);
   return (
     <div>
-      <form className="max-w-md mx-auto">
-        <label
-          htmlFor="default-search"
-          className="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white"
-        >
-          Search
-        </label>
-        <div className="relative">
-          <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-            <svg
-              className="w-4 h-4 text-gray-500 dark:text-gray-400"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 20 20"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-              />
-            </svg>
-          </div>
-          <input
-            type="search"
-            id="default-search"
-            className="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            placeholder="Search English, Chinese..."
-            required
-          />
-          <button
-            type="submit"
-            className="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-          >
-            Search
-          </button>
-        </div>
-      </form>
       <div className="flex gap-1 justify-center pt-2">
-        <Button size="xs">Eng</Button>
-        <Button size="xs">Eng</Button>
-        <Button size="xs">Eng</Button>
-        <Button size="xs">Eng</Button>
-        <Button size="xs">Eng</Button>
-        <Button size="xs">Eng</Button>
+        <Button size="xs" variant="secondary" onClick={()=>{handleSearchButton("")}}>Any</Button>
+        <Button size="xs" variant="secondary" onClick={()=>{handleSearchButton("eng")}}>Eng</Button>
+        <Button size="xs" variant="secondary" onClick={()=>{handleSearchButton("spa")}}>Spa</Button>
+        <Button size="xs" variant="secondary" onClick={()=>{handleSearchButton("fr")}}>Fr</Button>
+        <Button size="xs" variant="secondary" onClick={()=>{handleSearchButton("tig")}}>Tig</Button>
+        <Button size="xs" variant="secondary" onClick={()=>{handleSearchButton("amh")}}>Amh</Button>
+
       </div>
 
       <div className="flex flex-wrap justify-center">
         {groups &&
-          groups.map((group, index) => (
-            <GroupCard
-              key={index}
-              group={group}
-              avatars={[
-                { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
-                { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
-                { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
-                {
-                  name: "Prosper Otemuyiwa",
-                  src: "https://bit.ly/prosper-baba",
-                },
-                { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
-              ]}
-              max={3} // Customize how many avatars to show
-            />
-          ))}
+              ( groups.length <= 0?
+                <Card className="p-5 m-5">
+                  No Group Found
+                </Card>:
+
+                groups.map((group, index) => (
+                  <GroupCard
+                    key={index}
+                    group={group}
+                    avatars={[
+                      { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
+                      { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
+                      { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
+                      {
+                        name: "Prosper Otemuyiwa",
+                        src: "https://bit.ly/prosper-baba",
+                      },
+                      { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
+                    ]}
+                    max={3} // Customize how many avatars to show
+                  />
+                ))
+              )
+          
+          }
+
+
       </div>
     </div>
   );
