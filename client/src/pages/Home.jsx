@@ -31,13 +31,13 @@ const AvatarGroup = ({ avatars, max }) => {
         // />
         <div
           key={index}
-          className="h-10 w-10 rounded-full ring-2 ring-white bg-gray-200 text-sm flex items-center justify-center"
+          className="h-10 w-10 rounded-full ring-2 ring-white bg-gray-200 dark:bg-primary text-sm flex items-center justify-center"
         >
           TM
         </div>
       ))}
       {remainingCount > 0 && (
-        <div className="inline-block h-10 w-10 rounded-full ring-2 ring-white bg-gray-200 text-sm flex items-center justify-center">
+        <div className="inline-block h-10 w-10 rounded-full ring-2 ring-white bg-gray-200 dark:bg-primary text-sm flex items-center justify-center">
           +{remainingCount}
         </div>
       )}
@@ -47,7 +47,6 @@ const AvatarGroup = ({ avatars, max }) => {
 
 // GroupCard component
 const GroupCard = ({ group, avatars, max }) => {
-  
   return (
     <div className="bg-secondary shadow-md rounded-lg p-1 flex flex-col justify-between w-[300px] max-w-sm m-4">
       <div className="grid grid-cols-2">
@@ -66,16 +65,19 @@ const GroupCard = ({ group, avatars, max }) => {
               <div>
                 <p className="text-center pb-1">Group Owner</p>
                 <div className="flex flex-col items-center pb-1">
-                  <img
+                  {/* <img
                     className="w-20 h-20 mb-1 rounded-full shadow-lg"
                     src="https://bit.ly/ryan-florence"
                     alt="Bonnie image"
-                  />
+                  /> */}
+                  <div className="h-10 w-10 rounded-full ring-2 ring-white bg-gray-200 dark:bg-primary text-sm flex items-center justify-center">
+                    TM
+                  </div>
                   <h5 className="mb-1 text-xl font-medium text-gray-900 dark:text-white">
-                    Bonnie Green
+                    Anonymous
                   </h5>
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Visual Designer
+                    Description
                   </span>
                 </div>
               </div>
@@ -94,11 +96,8 @@ const GroupCard = ({ group, avatars, max }) => {
         </div>
 
         <div>
-        Topic:
-          <span className="text-sm font-semibold mb-4">
-            {" "}
-            {group.Topic}
-          </span>
+          Topic:
+          <span className="text-sm font-semibold mb-4"> {group.Topic}</span>
         </div>
       </div>
       {/* Avatar group */}

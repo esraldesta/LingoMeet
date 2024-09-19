@@ -39,6 +39,9 @@ export function CreateGroup() {
       .then((res) => {
         setErrors({});
         setIsLoading(false);
+        setTitle("")
+        setTopic("")
+        setLanguage("")
         setGroups((prevGroups) => [...prevGroups, res.data.data]);
         setOpen(false);
         toast({
