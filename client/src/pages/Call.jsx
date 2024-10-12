@@ -38,6 +38,9 @@ export default function Call() {
         }
 
         peer.on("open", (peerId) => {
+          alert("fetching peer info");
+          
+          alert("got peer info","you have successfully joined the room")
           setConn(peerId);
           socket.emit("join-room", roomId, peerId);
           setIsConnected(true);
