@@ -36,6 +36,7 @@ export default function Call() {
         if (myVideoRef.current) {
           myVideoRef.current.srcObject = mediaStream;
         }
+        alert("hello")
 
         peer.on("open", (peerId) => {
           alert("fetching peer info");
