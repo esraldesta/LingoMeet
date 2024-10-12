@@ -46,7 +46,7 @@ export default function ParticipantVideo({participant}) {
         </Button>
         {/* Enable/Disable video button */}
         <Button variant="secondary" size="xs" onClick={toggleVideo}>
-          {isVideoEnabled ? <CameraOff /> : <Camera />}
+          {isVideoEnabled ?  <Camera />: <CameraOff />}
         </Button>
       </div>
       <span className="absolute bottom-3 right-3 bg-opacity-50 bg-gray-800 text-white text-sm px-3 py-1 rounded-lg">

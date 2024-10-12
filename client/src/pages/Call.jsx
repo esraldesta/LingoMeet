@@ -214,9 +214,9 @@ export default function Call() {
             onClick={toggleVideo}
           >
             {isVideoEnabled ? (
-              <CameraOff className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
-            ) : (
               <Camera className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
+            ) : (
+              <CameraOff className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />              
             )}
             <span className="sr-only">Disable/Enable Video</span>
           </button>
