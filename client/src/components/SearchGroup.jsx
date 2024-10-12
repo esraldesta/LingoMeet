@@ -27,7 +27,7 @@ export default function SearchGroup() {
           type="text"
           id="default-search"
           className="block w-full py-2 ps-2 mr-6 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 pr-7"
-          placeholder="Search Eng, Chi..."
+          placeholder="v2 Search Eng, Chi..."
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
