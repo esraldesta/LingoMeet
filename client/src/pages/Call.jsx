@@ -15,9 +15,12 @@ export default function Call() {
   const [stream, setStream] = useState(null);
   const [isMuted, setIsMuted] = useState(false); // For microphone mute/unmute
   const [isVideoEnabled, setIsVideoEnabled] = useState(true); // For enabling/disabling video
+  const [activeParticipantIndex, setActiveParticipantIndex] = useState(null);
 
-  const placeholderImage = "https://via.placeholder.com/150"; // Placeholder image
-
+  const handleParticipantClick = (participantId) => {
+    const index = participants.findIndex((p) => p.id === participantId);
+    setActiveParticipantIndex(index);
+  };
   useEffect(() => {
     const peer = new Peer();
     const URL = "https://talkmate.onrender.com/";
@@ -36,12 +39,12 @@ export default function Call() {
         if (myVideoRef.current) {
           myVideoRef.current.srcObject = mediaStream;
         }
-        alert("hello")
+        alert("hello");
 
         peer.on("open", (peerId) => {
           alert("fetching peer info");
-          
-          alert("got peer info","you have successfully joined the room")
+
+          alert("got peer info", "you have successfully joined the room");
           setConn(peerId);
           socket.emit("join-room", roomId, peerId);
           setIsConnected(true);
@@ -141,28 +144,45 @@ export default function Call() {
   };
 
   return (
-    <div className="min-h-[50vh]">
-      <div className="border-solid border-red-50 mx-2">
-        <div className="flex flex-col items-center p-8 w-full h-full">
-          <div className="w-full h-full flex flex-wrap rounded-lg overflow-hidden gap-1 justify-center">
-            <div className="relative w-full sm:w-1/2 md:w-1/4 flex-shrink-0 bg-gray-10 rounded-lg overflow-clip">
-              <video
-                ref={myVideoRef}
-                autoPlay
-                muted
-                className="object-cover w-full h-full"
-              />
+    <div className="h-[80vh] flex flex-col items-center relative pt-2">
+      {/* you */}
 
-              <span className="absolute bottom-3 right-3 bg-opacity-50 bg-gray-800 text-white text-sm px-3 py-1 rounded-lg">
-                You
-              </span>
-            </div>
+      <div className="absolute right-0 top-0 h-24 w-24 shrink-0 rounded bg-blue-800 overflow-clip">
+        <video
+          ref={myVideoRef}
+          autoPlay
+          muted
+          className="object-cover w-full h-full"
+        />
 
-            {participants.map((participant, index) => (
-              <ParticipantVideo key={index} participant={participant} />
-            ))}
+        <span className="absolute bottom-3 right-3 bg-opacity-50 bg-gray-800 text-white text-sm px-3 py-1 rounded-lg">
+          You
+        </span>
+      </div>
+
+      {/* active */}
+
+      <div className="h-full pt-10 rounded-lg overflow-hidden">
+        {activeParticipantIndex !== null &&
+          participants[activeParticipantIndex] && (
+            <ParticipantVideo
+              participant={participants[activeParticipantIndex]}
+              isActive={true}
+            />
+          )}
+      </div>
+
+      {/* participants */}
+
+      <div className="flex h-28 w-full justify-center gap-1 overflow-x-auto mt-3">
+        {participants.map((participant) => (
+          <div
+            key={participant.id}
+            onClick={() => handleParticipantClick(participant.id)}
+          >
+            <ParticipantVideo participant={participant} isActive={false} />
           </div>
-        </div>
+        ))}
       </div>
 
       {/* Bottom Section for controls */}
@@ -216,7 +236,7 @@ export default function Call() {
             {isVideoEnabled ? (
               <Camera className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
             ) : (
-              <CameraOff className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />              
+              <CameraOff className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
             )}
             <span className="sr-only">Disable/Enable Video</span>
           </button>
