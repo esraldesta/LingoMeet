@@ -4,10 +4,9 @@ import { io } from "socket.io-client";
 import { useParams } from "react-router";
 import { Camera, CameraOff, Mic, MicOff } from "lucide-react";
 import ParticipantVideo from "./ParticipantVideo";
-import Draggable from 'react-draggable';
+import Draggable from "react-draggable";
 export default function Call() {
-  const [conn, setConn] = useState();
-  const [isConnected, setIsConnected] = useState(false);
+  const [conn, setConn] = useState(null);
   const { id: roomId } = useParams();
   const [participants, setParticipants] = useState([]);
   const myVideoRef = useRef();
@@ -42,7 +41,6 @@ export default function Call() {
         peer.on("open", (peerId) => {
           setConn(peerId);
           socket.emit("join-room", roomId, peerId);
-          setIsConnected(true);
         });
 
         peer.on("call", (call) => {
@@ -140,9 +138,15 @@ export default function Call() {
 
   return (
     <div className="h-[80vh] flex flex-col items-center relative pt-2 px-2">
+      {!conn && (
+        <div>
+          <p>Connecting...</p>
+          <p>if this take more than 30 sec please rejoin again</p>
+        </div>
+      )}
       {/* you */}
 
-      <Draggable className="z-50">
+      <Draggable>
         <div className="absolute right-0 top-0 h-32 w-32 shrink-0 rounded bg-blue-800 overflow-clip z-50">
           <video
             ref={myVideoRef}
@@ -157,7 +161,6 @@ export default function Call() {
         </div>
       </Draggable>
 
-      
       {/* active */}
 
       <div className="h-full pt-10 mt-10 rounded-lg overflow-hidden">

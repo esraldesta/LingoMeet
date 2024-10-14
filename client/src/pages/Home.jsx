@@ -288,7 +288,10 @@ const Home = () => {
       <div className="flex flex-wrap justify-center">
         {groups &&
           (groups.length <= 0 ? (
-            <Card className="p-5 m-5">No Group Found</Card>
+            <Card className="p-5 m-5">
+              <p>No Group Found</p>
+              <p className="text-xs">Sometimes, it may take up to 30 seconds for the server to wake up if it’s been inactive for a while. Thank you for your patience!</p>
+            </Card>
           ) : (
             groups.map((group, index) => (
               <GroupCard

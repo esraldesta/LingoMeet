@@ -7,9 +7,9 @@ const manifestForPlugIn = {
   registerType: "prompt",
   includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
   manifest: {
-    name: "TalkMate",
-    short_name: "TalkMate",
-    description: "Meet your language partner",
+    name: "LingoMeet",
+    short_name: "LingoMeet",
+    description: "place where you can meet your language partner",
     icons: [
       {
         src: "/icons/android/android-launchericon-48-48.png",
