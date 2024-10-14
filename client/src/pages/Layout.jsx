@@ -15,7 +15,6 @@ import {
 import { useTranslation } from "react-i18next";
 import { CreateGroup } from "../components/dialogs/CreateGroup";
 import SearchGroup from "../components/SearchGroup";
-import Logo from "../components/logo/Logo";
 
 const Layout = () => {
   const { t } = useTranslation("global");
