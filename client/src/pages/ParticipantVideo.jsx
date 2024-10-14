@@ -3,7 +3,6 @@ import { Button } from "../components/ui/button";
 import { Camera, CameraOff, Mic, MicOff } from "lucide-react";
 
 export default function ParticipantVideo({ participant, isActive }) {
- 
   const [isMuted, setIsMuted] = useState(false); // For microphone mute/unmute
   const [isVideoEnabled, setIsVideoEnabled] = useState(true); // For enabling/disabling video
 
@@ -30,7 +29,7 @@ export default function ParticipantVideo({ participant, isActive }) {
       key={participant.id} // Ensure unique key
       className={`${
         isActive ? "w-full h-80" : "w-24 h-full shrink-0"
-      }   rounded bg-red-800 relative`}
+      }   rounded relative`}
     >
       <video
         autoPlay
@@ -43,15 +42,31 @@ export default function ParticipantVideo({ participant, isActive }) {
 
       <div className="absolute top-3 left-3 flex space-x-2">
         {/* Mute/Unmute button */}
-        <Button variant="secondary" size="xs" onClick={toggleMute}>
-          {isMuted ? <MicOff /> : <Mic />}
-        </Button>
+        {isActive ? (
+          <Button variant="secondary" size="xs" onClick={toggleMute}>
+            {isMuted ? <MicOff /> : <Mic />}
+          </Button>
+        ) : (
+          <button onClick={toggleMute}>
+            {isMuted ? <MicOff size={10} /> : <Mic size={10} />}
+          </button>
+        )}
         {/* Enable/Disable video button */}
-        <Button variant="secondary" size="xs" onClick={toggleVideo}>
-          {isVideoEnabled ? <Camera /> : <CameraOff />}
-        </Button>
+        {isActive ? (
+          <Button variant="secondary" size="xs" onClick={toggleVideo}>
+            {isVideoEnabled ? <Camera /> : <CameraOff />}
+          </Button>
+        ) : (
+          <button onClick={toggleVideo}>
+            {isVideoEnabled ? <Camera size={10} /> : <CameraOff size={10} />}
+          </button>
+        )}
       </div>
-      <span className="absolute bottom-3 right-3 bg-opacity-50 bg-gray-800 text-white text-sm px-3 py-1 rounded-lg">
+      <span       
+      className={`${
+        isActive ? "text-xs px-3 py-1 rounded-lg bottom-3 right-3 bg-opacity-50 bg-gray-800" : "text-[12px] bottom-1 right-1"
+      }   absolute text-white`}
+      >
         {participant.name || "Participant"}
       </span>
     </div>

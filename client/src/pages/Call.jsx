@@ -4,7 +4,7 @@ import { io } from "socket.io-client";
 import { useParams } from "react-router";
 import { Camera, CameraOff, Mic, MicOff } from "lucide-react";
 import ParticipantVideo from "./ParticipantVideo";
-
+import Draggable from 'react-draggable';
 export default function Call() {
   const [conn, setConn] = useState();
   const [isConnected, setIsConnected] = useState(false);
@@ -39,12 +39,7 @@ export default function Call() {
         if (myVideoRef.current) {
           myVideoRef.current.srcObject = mediaStream;
         }
-        alert("hello");
-
         peer.on("open", (peerId) => {
-          alert("fetching peer info");
-
-          alert("got peer info", "you have successfully joined the room");
           setConn(peerId);
           socket.emit("join-room", roomId, peerId);
           setIsConnected(true);
@@ -144,25 +139,28 @@ export default function Call() {
   };
 
   return (
-    <div className="h-[80vh] flex flex-col items-center relative pt-2">
+    <div className="h-[80vh] flex flex-col items-center relative pt-2 px-2">
       {/* you */}
 
-      <div className="absolute right-0 top-0 h-24 w-24 shrink-0 rounded bg-blue-800 overflow-clip">
-        <video
-          ref={myVideoRef}
-          autoPlay
-          muted
-          className="object-cover w-full h-full"
-        />
+      <Draggable className="z-50">
+        <div className="absolute right-0 top-0 h-32 w-32 shrink-0 rounded bg-blue-800 overflow-clip z-50">
+          <video
+            ref={myVideoRef}
+            autoPlay
+            muted
+            className="object-cover w-full h-full"
+          />
 
-        <span className="absolute bottom-3 right-3 bg-opacity-50 bg-gray-800 text-white text-sm px-3 py-1 rounded-lg">
-          You
-        </span>
-      </div>
+          <span className="absolute bottom-3 right-3 bg-opacity-50 bg-gray-800 text-white text-sm px-3 py-1 rounded-lg">
+            You
+          </span>
+        </div>
+      </Draggable>
 
+      
       {/* active */}
 
-      <div className="h-full pt-10 rounded-lg overflow-hidden">
+      <div className="h-full pt-10 mt-10 rounded-lg overflow-hidden">
         {activeParticipantIndex !== null &&
           participants[activeParticipantIndex] && (
             <ParticipantVideo
@@ -174,7 +172,7 @@ export default function Call() {
 
       {/* participants */}
 
-      <div className="flex h-28 w-full justify-center gap-1 overflow-x-auto mt-3">
+      <div className="h-28 max-w-full flex justify-start gap-1 overflow-x-auto">
         {participants.map((participant) => (
           <div
             key={participant.id}
