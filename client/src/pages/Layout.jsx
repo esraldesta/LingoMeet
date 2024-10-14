@@ -1,11 +1,7 @@
 import { Outlet, Link } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
 import { ModeToggle } from "../components/toggle/mode-toggle";
-import { LangToggle } from "../components/toggle/lang-toggle";
 import { Toaster } from "../components/ui/toaster";
-import { Button } from "../components/ui/button";
 
-import { CircleUser } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -30,7 +26,9 @@ const Layout = () => {
       <div className="flex flex-col sm:gap-4 sm:pl-14">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 mb-1">
           <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-            <Logo/>
+            <div className="w-[40px] h-[40px] rounded-full overflow-hidden">
+              <img src="/icons/android/android-launchericon-48-48.png" />
+            </div>
             <Link
               to="/"
               className="flex items-center gap-2 text-lg font-semibold md:text-base"
@@ -38,7 +36,7 @@ const Layout = () => {
               <span className="sr-only">{t("layout.logoName")}</span>
             </Link>
             <div className="ml-auto flex-1 sm:flex-initial">
-            <SearchGroup />
+              <SearchGroup />
             </div>
 
             <ModeToggle />
