@@ -5,12 +5,6 @@ exports.Create = async (data) => {
   return response;
 };
 
-exports.GetOne = async (id) => {
-  const response = await Model.findById({
-    _id: id,
-  });
-  return response;
-};
 
 exports.GetAll = async (req) => {
   const { limit, page, queryName, searchQuery, sort } = req.query;
@@ -30,23 +24,11 @@ exports.GetAll = async (req) => {
   }
 
   const response = await Model.find(filter)
-    .sort(sort)
+    .sort({ createdAt: -1 })
     .skip(skip || 0)
     .limit(limit || 1000);
   // .populate("equbType")
 
-  return response;
-};
-
-exports.Update = async (req) => {
-  const { body } = req;
-  const { id } = req.params;
-  const response = await Model.updateOne(
-    {
-      _id: id,
-    },
-    body
-  );
   return response;
 };
 
