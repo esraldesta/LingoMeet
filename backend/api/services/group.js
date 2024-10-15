@@ -1,8 +1,6 @@
 const Model = require("../models/group");
 
 exports.Create = async (data) => {
-  console.log("data",data);
-  
   const response = await Model.create(data);
   return response;
 };
@@ -10,19 +8,24 @@ exports.Create = async (data) => {
 exports.GetOne = async (id) => {
   const response = await Model.findById({
     _id: id,
-  })
+  });
   return response;
 };
 
 exports.GetAll = async (req) => {
   const { limit, page, queryName, searchQuery, sort } = req.query;
   const skip = (page - 1) * (limit || 10);
-  const filter = {};
+  let filter = {};
 
-  if (queryName) {
-    filter[queryName] = {
-      $regex: searchQuery,
-      $options: "i",
+  if (searchQuery) {
+    const regex = new RegExp(searchQuery, "i");
+
+    filter = {
+      $or: [
+        { title: { $regex: regex } },
+        { Topic: { $regex: regex } },
+        { language: { $regex: regex } },
+      ],
     };
   }
 
