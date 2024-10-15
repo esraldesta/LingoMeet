@@ -2,7 +2,6 @@ import { Outlet, Link } from "react-router-dom";
 import { ModeToggle } from "../components/toggle/mode-toggle";
 import { Toaster } from "../components/ui/toaster";
 
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,13 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { useTranslation } from "react-i18next";
 import { CreateGroup } from "../components/dialogs/CreateGroup";
 import SearchGroup from "../components/SearchGroup";
 
 const Layout = () => {
-  const { t } = useTranslation("global");
-
   return (
     <div className="flex w-full flex-col">
       {/* Header */}
@@ -26,14 +22,13 @@ const Layout = () => {
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 mb-1">
           <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
             <div className="w-[40px] h-[40px] rounded-full overflow-hidden">
-              <img src="/icons/android/android-launchericon-48-48.png" />
+              <Link
+                to="/"
+                className="flex items-center gap-2 text-lg font-semibold md:text-base"
+              >
+                <img src="/icons/android/android-launchericon-48-48.png" />
+              </Link>
             </div>
-            <Link
-              to="/"
-              className="flex items-center gap-2 text-lg font-semibold md:text-base"
-            >
-              <span className="sr-only">{t("layout.logoName")}</span>
-            </Link>
             <div className="ml-auto flex-1 sm:flex-initial">
               <SearchGroup />
             </div>
@@ -105,16 +100,16 @@ const Layout = () => {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{t("layout.myAccount")}</DropdownMenuLabel>
+              <DropdownMenuLabel>MyAccount</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
                 <Link to="/settings" className="w-full">
-                  <p>{t("layout.setting")}</p>
+                  <p>Setting</p>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Link to="/support" className="w-full">
-                  <p>{t("layout.support")}</p>
+                  <p>Support</p>
                 </Link>
               </DropdownMenuItem>
               {/* <DropdownMenuSeparator />
