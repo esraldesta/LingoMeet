@@ -10,8 +10,6 @@ export default function SearchGroup() {
     e.preventDefault();
     API.get(`/?searchQuery=${search}`)
       .then((res) => {
-        console.log("res.data", res.data.data);
-
         setGroups(res.data.data);
       })
       .catch((err) => {
