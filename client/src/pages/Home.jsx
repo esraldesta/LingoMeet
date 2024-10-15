@@ -6,29 +6,25 @@ import {
   PopoverTrigger,
 } from "../components/ui/popover";
 import { Ellipsis } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import API from "../api/axios";
 import { useGroups } from "../context/GroupContext";
 import { Card } from "../components/ui/card";
-import SearchGroup from "../components/SearchGroup";
+
 function getRandomArbitrary(min, max) {
   return Math.floor(Math.random() * (max - min) + min);
 }
 
 // AvatarGroup component
-const AvatarGroup = ({ avatars, max }) => {
-  const displayedAvatars = avatars.slice(0, max);
-  const remainingCount = avatars.length - max;
+const AvatarGroup = () => {
+  const max  = getRandomArbitrary(2, 5)
+  const total = [1,2,3,4,5,6,7,8]
+  const displayedAvatars = total.slice(0, max);
+  const remainingCount = total.length - max;
 
   return (
     <div className="flex -space-x-2 mx-auto">
-      {displayedAvatars.map((avatar, index) => (
-        // <img
-        //   key={index}
-        //   className="inline-block h-10 w-10 rounded-full ring-2 ring-white"
-        //   src={avatar.src}
-        //   alt={avatar.name}
-        // />
+      {displayedAvatars.map((index) => (
         <div
           key={index}
           className="h-10 w-10 rounded-full ring-2 ring-white bg-gray-200 dark:bg-primary text-sm flex items-center justify-center"
@@ -46,7 +42,7 @@ const AvatarGroup = ({ avatars, max }) => {
 };
 
 // GroupCard component
-const GroupCard = ({ group, avatars, max }) => {
+const GroupCard = ({ group }) => {
   return (
     <div className="bg-secondary shadow-md rounded-lg p-1 flex flex-col justify-between w-[300px] max-w-sm m-4">
       <div className="grid grid-cols-2">
@@ -101,7 +97,7 @@ const GroupCard = ({ group, avatars, max }) => {
         </div>
       </div>
       {/* Avatar group */}
-      <AvatarGroup avatars={avatars} max={max} />
+      <AvatarGroup />
 
       {/* Join button */}
       <Link
@@ -297,23 +293,6 @@ const Home = () => {
               <GroupCard
                 key={index}
                 group={group}
-                avatars={[
-                  {
-                    name: "Ryan Florence",
-                    src: "https://bit.ly/ryan-florence",
-                  },
-                  { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
-                  { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
-                  {
-                    name: "Prosper Otemuyiwa",
-                    src: "https://bit.ly/prosper-baba",
-                  },
-                  {
-                    name: "Christian Nwamba",
-                    src: "https://bit.ly/code-beast",
-                  },
-                ]}
-                max={getRandomArbitrary(2, 5)} // Customize how many avatars to show
               />
             ))
           ))}

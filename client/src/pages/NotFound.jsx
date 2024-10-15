@@ -8,11 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
-import Transition from "../components/Transition";
 
 export default function NotFound() {
   return (
-    <Transition>
       <Card className="w-full max-w-sm mx-auto">
         <CardHeader>
           <CardTitle className="text-2xl">404</CardTitle>
@@ -25,6 +23,5 @@ export default function NotFound() {
           </Button>
         </CardFooter>
       </Card>
-    </Transition>
   );
 }

@@ -1,31 +1,11 @@
 import axios from "axios";
-let logoutFunction = null;
 
-// Function to set the logout function from AuthContext
-export const setLogoutFunction = (logout) => {
-  logoutFunction = logout;
-};
 
 const API = axios.create({
   // TODO: replace URL value from env
-  baseURL: "https://talkmate.onrender.com/api/v1",
+  baseURL: "http://localhost:3000/api/v1",
 });
 
-// Request interceptor
-API.interceptors.request.use(
-  (config) => {
-    // Add any custom configurations here
-    // For example, adding an Authorization header
-    const accessToken = localStorage.getItem("accessToken");
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 // Response interceptor
 API.interceptors.response.use(
@@ -44,12 +24,8 @@ API.interceptors.response.use(
   (error) => {
     // Handle errors here
     if (error.response && error.response.status >= 401) {
-      if (logoutFunction) {
-        logoutFunction(); // Trigger the logout function when token is expired
-      }
-
       // Optionally, redirect the user to the sign-in page
-      window.location.href = "/signin";
+      window.location.href = "/notfound";
     }
     return Promise.reject(error);
   }

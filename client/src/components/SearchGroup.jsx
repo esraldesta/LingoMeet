@@ -8,7 +8,7 @@ export default function SearchGroup() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    API.get(`/?queryName=language&searchQuery=${search}`)
+    API.get(`/?searchQuery=${search}`)
       .then((res) => {
         console.log("res.data", res.data.data);
 

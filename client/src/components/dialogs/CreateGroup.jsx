@@ -99,7 +99,7 @@ export function CreateGroup() {
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="title" className="text-right">
-              Title
+              Group Name
             </Label>
             <div className="col-span-3">
               <span className="block mb-1">
