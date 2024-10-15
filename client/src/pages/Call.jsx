@@ -141,7 +141,7 @@ export default function Call() {
       {!conn && (
         <div>
           <p>Connecting...</p>
-          <p>if this take more than 30 sec please rejoin again</p>
+          <p className="text-[12px]">If it takes more than 30 seconds to connect, please try rejoining.</p>
         </div>
       )}
       {/* you */}

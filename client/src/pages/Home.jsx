@@ -23,7 +23,7 @@ const AvatarGroup = () => {
   const remainingCount = total.length - max;
 
   return (
-    <div className="flex -space-x-2 mx-auto">
+    <div className="flex -space-x-2 mx-auto mt-3">
       {displayedAvatars.map((index) => (
         <div
           key={index}
