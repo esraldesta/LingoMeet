@@ -3,7 +3,7 @@ import axios from "axios";
 
 const API = axios.create({
   // TODO: replace URL value from env
-  baseURL: "https://talkmate.onrender.com/api/v1",
+  baseURL: "https://lingomeetbackend.onrender.com/api/v1",
 });
 
 
