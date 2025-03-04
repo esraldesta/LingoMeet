@@ -1,6 +1,6 @@
 import { Outlet, Link } from "react-router-dom";
 import { ModeToggle } from "../components/toggle/mode-toggle";
-import { Toaster } from "../components/ui/toaster";
+import { Toaster } from "@/components/ui/toaster";
 
 import {
   DropdownMenu,
@@ -11,8 +11,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { CreateGroup } from "../components/dialogs/CreateGroup";
-import SearchGroup from "../components/SearchGroup";
+import { CreateGroup } from "@/components/dialogs/CreateGroup";
+import SearchGroup from "@/components/SearchGroup";
 
 const Layout = () => {
   return (

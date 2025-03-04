@@ -1,15 +1,13 @@
 import axios from "axios";
 
-
 const API = axios.create({
-  // TODO: replace URL value from env
-  baseURL: "https://lingomeetbackend.onrender.com/api/v1",
+  // baseURL: "https://lingomeetbackend.onrender.com/api/v1",
+  baseURL: "http://localhost:3000/api/v1",
 });
-
 
 // Response interceptor
 API.interceptors.response.use(
-  (response) => {
+  (response: any) => {
     // Handle the response data here
     if (response.data && response.data.data.errors) {
       return Promise.reject({
@@ -21,7 +19,7 @@ API.interceptors.response.use(
     }
     return response;
   },
-  (error) => {
+  (error: any) => {
     // Handle errors here
     if (error.response && error.response.status >= 401) {
       // Optionally, redirect the user to the sign-in page

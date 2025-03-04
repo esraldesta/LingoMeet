@@ -22,7 +22,7 @@ export default function Call() {
   };
   useEffect(() => {
     const peer = new Peer();
-    const URL = "https://lingomeetbackend.onrender.com";
+    const URL = "http://localhost:3000/api/v1";
     const connectionOptions = {
       "force new connection": true,
       reconnectionAttempts: "Infinity",
@@ -141,7 +141,9 @@ export default function Call() {
       {!conn && (
         <div>
           <p>Connecting...</p>
-          <p className="text-[12px]">If it takes more than 30 seconds to connect, please try rejoining.</p>
+          <p className="text-[12px]">
+            If it takes more than 30 seconds to connect, please try rejoining.
+          </p>
         </div>
       )}
       {/* you */}

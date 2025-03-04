@@ -5,8 +5,6 @@ import { Label } from "@/components/ui/label";
 
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -15,12 +13,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
-import API from "../../api/axios";
-import { useToast } from "../ui/use-toast";
-import { useGroups } from "../../context/GroupContext";
-export function CreateGroup() {
-  const { toast } = useToast();
+import { toast } from "sonner";
+import API from "@/api/axios";
+import { useGroups } from "@/context/GroupContext";
 
+export function CreateGroup() {
   const [title, setTitle] = useState("");
   const [Topic, setTopic] = useState("");
   const [language, setLanguage] = useState([]);
@@ -30,7 +27,7 @@ export function CreateGroup() {
 
   const { setGroups } = useGroups();
   const HandleSubmit = () => {
-    setIsLoading(true)
+    setIsLoading(true);
     API.post("/", {
       title,
       Topic,
@@ -39,9 +36,9 @@ export function CreateGroup() {
       .then((res) => {
         setErrors({});
         setIsLoading(false);
-        setTitle("")
-        setTopic("")
-        setLanguage("")
+        setTitle("");
+        setTopic("");
+        setLanguage("");
         setGroups((prevGroups) => [...prevGroups, res.data.data]);
         setOpen(false);
         toast({
@@ -160,12 +157,18 @@ export function CreateGroup() {
           </div>
         </div>
         <AlertDialogFooter>
-                <div className="flex justify-end gap-2 items-center">
-                <Button variant="secondary" disabled={isLoading} onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button disabled={isLoading} onClick={HandleSubmit}>Continue</Button>
-                </div>
+          <div className="flex justify-end gap-2 items-center">
+            <Button
+              variant="secondary"
+              disabled={isLoading}
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button disabled={isLoading} onClick={HandleSubmit}>
+              Continue
+            </Button>
+          </div>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
