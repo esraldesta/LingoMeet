@@ -1,22 +1,21 @@
 const express = require("express");
 const cors = require("cors");
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const groupRouter = require("./api/routers/group");
 const { ConvertError, NotFound, ErrorHandler } = require("./middleware/error");
 const app = express();
 app.use(cors());
-app.use(express.json())
+app.use(express.json());
 
-app.use('/api/v1', groupRouter);
+app.use("/api/v1", groupRouter);
 
-main().catch(err => console.log(err));
+main().catch((err) => console.log(err));
 
 async function main() {
-  await mongoose.connect('mongodb+srv://talkmate:sRvTLpyUFPloJLss@cluster0.2jhpf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
+  await mongoose.connect("mongodb://127.0.0.1/db");
   console.log("Db Connected");
 }
 const server = require("http").Server(app);
-
 
 app.use(ConvertError);
 
@@ -25,7 +24,6 @@ app.use(NotFound);
 
 // Error handler, send stacktrace only during development
 app.use(ErrorHandler);
-
 
 const io = require("socket.io")(server);
 
