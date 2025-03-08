@@ -9,12 +9,12 @@ app.use(express.json());
 
 app.use("/api/v1", groupRouter);
 
-main().catch((err) => console.log(err));
+// main().catch((err) => console.log(err));
 
-async function main() {
-  await mongoose.connect("mongodb://127.0.0.1/db");
-  console.log("Db Connected");
-}
+// async function main() {
+//   await mongoose.connect("mongodb://127.0.0.1/db");
+//   console.log("Db Connected");
+// }
 const server = require("http").Server(app);
 
 app.use(ConvertError);
@@ -35,7 +35,7 @@ io.on("connection", (socket) => {
 
     // Notify other users in the room that a new user has connected
     socket.to(roomId).emit("user-connected", userId);
-    console.log("User joined: Room ID:", roomId, "User ID:", userId);
+    // console.log("User joined: Room ID:", roomId, "User ID:", userId);
 
     // Handle when user disconnects
     socket.on("disconnect", () => {
