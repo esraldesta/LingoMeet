@@ -101,7 +101,7 @@ const GroupCard = ({ group }) => {
 
       {/* Join button */}
       <Link
-        to={`/call/${group._id}`}
+        to={`/call/${group.id}`}
         className="mt-4 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg"
       >
         Join

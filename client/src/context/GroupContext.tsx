@@ -1,11 +1,11 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, ReactElement, useContext, useState } from "react";
 
 // Create a context
-const GroupContext = createContext();
+const GroupContext = createContext<string[]>();
 
 // Context provider component
-export const GroupProvider = ({ children }) => {
-  const [groups, setGroups] = useState([]);
+export const GroupProvider = ({ children }: { children: ReactElement }) => {
+  const [groups, setGroups] = useState<string[]>([]);
 
   return (
     <GroupContext.Provider value={{ groups, setGroups }}>

@@ -11,29 +11,34 @@ import NotFound from "./pages/NotFound";
 import Call from "@/pages/Call";
 import { ConnectionManager } from "@/components/ConnectionManager";
 import { GroupProvider } from "@/context/GroupContext";
+import { Providers } from "./providers";
+import { FloatingWindow } from "./components/call/floating-window";
 
 function App() {
   return (
     <>
-      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-        <GroupProvider>
-          <AnimatePresence mode="wait">
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Layout />}>
-                  <Route index element={<Home />} />
-                  <Route path="/home" element={<Home />} />
-                  <Route path="/call/:id" element={<Call />} />
-                  <Route path="/conn" element={<ConnectionManager />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/support" element={<Support />} />
-                  <Route path="*" element={<NotFound />} />
-                </Route>
-              </Routes>
-            </BrowserRouter>
-          </AnimatePresence>
-        </GroupProvider>
-      </ThemeProvider>
+      <Providers>
+        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+          <GroupProvider>
+            <AnimatePresence mode="wait">
+              <BrowserRouter>
+                <FloatingWindow />
+                <Routes>
+                  <Route path="/" element={<Layout />}>
+                    <Route index element={<Home />} />
+                    <Route path="/home" element={<Home />} />
+                    <Route path="/call/:id" element={<Call />} />
+                    <Route path="/conn" element={<ConnectionManager />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/support" element={<Support />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Route>
+                </Routes>
+              </BrowserRouter>
+            </AnimatePresence>
+          </GroupProvider>
+        </ThemeProvider>
+      </Providers>
     </>
   );
 }
