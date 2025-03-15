@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Group {
+  id              String         @id @default(uuid())
+  createdBy       String?         @unique
+  isPrivate       Boolean        @default(false)
+  topic           String?         @default("any")
+  maxPeople       Int?        
+  createdAt       DateTime       @default(now()) @map("createdAt")
+  updatedAt       DateTime       @default(now()) @updatedAt @map("updatedAt")
+  levels          Level[]        @relation("GroupLevels")
+  participants    Participant[]  @relation("GroupParticipants")
+  languages       Language[]     @relation("GroupLanguages")  // Explicit relation name
+  creator         Participant?    @relation("GroupCreator", fields: [createdBy], references: [id])
+  invitationLinks InviationLink[]
+}
+
+model Participant {
+  id        String    @id @default(uuid())
+  name      String
+  groupId   String
+  peerId    String
+  isMuted   Boolean   @default(false)
+  createdAt DateTime  @default(now()) @map("createdAt")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updatedAt")
+  group     Group     @relation("GroupParticipants", fields: [groupId], references: [id])
+  createdGroups   Group?    @relation("GroupCreator")
+}
+
+model Language {
+  id        String    @id @default(uuid())
+  name      String
+  createdAt DateTime  @default(now()) @map("createdAt")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updatedAt")
+  groups    Group[]   @relation("GroupLanguages")  // Explicit relation name
+}
+
+model Level {
+  id        String           @id @default(uuid())
+  groupId   String
+  name      ProficiencyLevel
+  createdAt DateTime         @default(now()) @map("createdAt")
+  updatedAt DateTime         @default(now()) @updatedAt @map("updatedAt")
+  groups     Group[]          @relation("GroupLevels")
+}
+
+enum ProficiencyLevel {
+  ALL
+  BEGINNER
+  UPPER_BEGINNER
+  INTERMEDIATE
+  UPPER_INTERMEDIATE
+  ADVANCED
+  FLUENT
+}
+
+model InviationLink {
+  id        String    @id @default(uuid())
+  groupId   String
+  link      String
+  createdAt DateTime  @default(now()) @map("createdAt")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updatedAt")
+  group     Group     @relation(fields: [groupId], references: [id])
+}

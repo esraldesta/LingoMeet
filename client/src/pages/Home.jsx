@@ -17,8 +17,8 @@ function getRandomArbitrary(min, max) {
 
 // AvatarGroup component
 const AvatarGroup = () => {
-  const max  = getRandomArbitrary(2, 5)
-  const total = [1,2,3,4,5,6,7,8]
+  const max = getRandomArbitrary(2, 5);
+  const total = [1, 2, 3, 4, 5, 6, 7, 8];
   const displayedAvatars = total.slice(0, max);
   const remainingCount = total.length - max;
 
@@ -101,7 +101,7 @@ const GroupCard = ({ group }) => {
 
       {/* Join button */}
       <Link
-        to={`/call/${group._id}`}
+        to={`/call/${group.id}`}
         className="mt-4 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg"
       >
         Join
@@ -219,6 +219,7 @@ const Home = () => {
       setGroups(res.data.data);
     });
   }, []);
+
   return (
     <div>
       <div className="flex gap-1 justify-end p-2 relative mt-5">
@@ -286,14 +287,15 @@ const Home = () => {
           (groups.length <= 0 ? (
             <Card className="p-5 m-5">
               <p>No Group Found</p>
-              <p className="text-xs">Sometimes, it may take up to 30 seconds for the server to wake up if it’s been inactive for a while. Thank you for your patience!</p>
+              <p className="text-xs">
+                Sometimes, it may take up to 30 seconds for the server to wake
+                up if it’s been inactive for a while. Thank you for your
+                patience!
+              </p>
             </Card>
           ) : (
             groups.map((group, index) => (
-              <GroupCard
-                key={index}
-                group={group}
-              />
+              <GroupCard key={index} group={group} />
             ))
           ))}
       </div>

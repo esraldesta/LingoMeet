@@ -1,147 +1,56 @@
 import { useEffect, useRef, useState } from "react";
-import { Peer } from "peerjs";
-import { io } from "socket.io-client";
+import { MediaConnection, Peer } from "peerjs";
+import { io, SocketOptions } from "socket.io-client";
 import { useParams } from "react-router";
 import { Camera, CameraOff, Mic, MicOff } from "lucide-react";
 import ParticipantVideo from "./ParticipantVideo";
 import Draggable from "react-draggable";
+import { useRoom } from "@/context/room-context";
+import { UseCall } from "@/hooks/use-call";
+
 export default function Call() {
-  const [conn, setConn] = useState(null);
   const { id: roomId } = useParams();
-  const [participants, setParticipants] = useState([]);
-  const myVideoRef = useRef();
-  const [peerConnections, setPeerConnections] = useState({});
-  const [stream, setStream] = useState(null);
-  const [isMuted, setIsMuted] = useState(false); // For microphone mute/unmute
-  const [isVideoEnabled, setIsVideoEnabled] = useState(true); // For enabling/disabling video
-  const [activeParticipantIndex, setActiveParticipantIndex] = useState(null);
+  const {
+    conn,
+    setConn,
+    setParticipants,
+    myVideoRef,
+    setStream,
+    participants,
+    activeParticipantIndex,
+    addParticipantStream,
+    removeParticipantStream,
+    handleParticipantClick,
+    isMuted,
+    toggleMute,
+    endCall,
+    toggleVideo,
+    isVideoEnabled,
+    setPeerConnections,
+    peerConnections,
+  } = useRoom();
 
-  const handleParticipantClick = (participantId) => {
-    const index = participants.findIndex((p) => p.id === participantId);
-    setActiveParticipantIndex(index);
-  };
-  useEffect(() => {
-    const peer = new Peer();
-    const URL = "https://lingomeetbackend.onrender.com";
-    const connectionOptions = {
-      "force new connection": true,
-      reconnectionAttempts: "Infinity",
-      timeout: 10000,
-      transports: ["websocket"],
-    };
-    const socket = io(URL, connectionOptions);
-
-    navigator.mediaDevices
-      .getUserMedia({ video: true, audio: true })
-      .then((mediaStream) => {
-        setStream(mediaStream);
-        if (myVideoRef.current) {
-          myVideoRef.current.srcObject = mediaStream;
-        }
-        peer.on("open", (peerId) => {
-          setConn(peerId);
-          socket.emit("join-room", roomId, peerId);
-        });
-
-        peer.on("call", (call) => {
-          // Avoid answering multiple calls for the same user
-          if (!peerConnections[call.peer]) {
-            call.answer(mediaStream);
-            call.on("stream", (userVideoStream) => {
-              addParticipantStream(call.peer, userVideoStream);
-            });
-            setPeerConnections((prevConnections) => ({
-              ...prevConnections,
-              [call.peer]: call,
-            }));
-          }
-        });
-
-        socket.on("user-connected", (userId) => {
-          // Avoid calling users already connected
-          if (!peerConnections[userId]) {
-            const call = peer.call(userId, mediaStream);
-            call.on("stream", (userVideoStream) => {
-              addParticipantStream(userId, userVideoStream);
-            });
-            setPeerConnections((prevConnections) => ({
-              ...prevConnections,
-              [userId]: call,
-            }));
-          }
-        });
-
-        socket.on("video-state-changed", ({ userId, isVideoEnabled }) => {
-          setParticipants((prevParticipants) =>
-            prevParticipants.map((p) =>
-              p.id === userId ? { ...p, isVideoEnabled } : p
-            )
-          );
-        });
-      });
-
-    socket.on("user-disconnected", (userId) => {
-      if (peerConnections[userId]) {
-        peerConnections[userId].close();
-      }
-      removeParticipantStream(userId);
-    });
-
-    return () => {
-      peer.disconnect();
-      peer.destroy();
-      socket.disconnect();
-    };
-  }, [roomId]);
-
-  const addParticipantStream = (userId, stream) => {
-    // Check if the participant is already added
-    setParticipants((prevParticipants) => {
-      if (prevParticipants.find((p) => p.id === userId)) {
-        return prevParticipants; // Do not add if already exists
-      }
-      return [
-        ...prevParticipants,
-        { id: userId, stream, isVideoEnabled: true },
-      ];
-    });
-  };
-
-  const removeParticipantStream = (userId) => {
-    setParticipants((prevParticipants) =>
-      prevParticipants.filter((p) => p.id !== userId)
-    );
-  };
-
-  const toggleMute = () => {
-    const audioTrack = stream.getAudioTracks()[0];
-    if (audioTrack) {
-      audioTrack.enabled = !audioTrack.enabled;
-      setIsMuted(!audioTrack.enabled);
-    }
-  };
-
-  const toggleVideo = () => {
-    const videoTrack = stream.getVideoTracks()[0];
-    if (videoTrack) {
-      videoTrack.enabled = !videoTrack.enabled;
-      setIsVideoEnabled(videoTrack.enabled);
-    }
-  };
-
-  const endCall = () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop()); // Stop all media tracks
-    }
-    window.location.href = "/"; // Redirect or handle call end
-  };
+  // Initialize the call logic
+  UseCall({
+    roomId,
+    setConn,
+    setParticipants,
+    myVideoRef,
+    setStream,
+    addParticipantStream,
+    removeParticipantStream,
+    setPeerConnections,
+    peerConnections,
+  });
 
   return (
     <div className="h-[80vh] flex flex-col items-center relative pt-2 px-2">
       {!conn && (
         <div>
           <p>Connecting...</p>
-          <p className="text-[12px]">If it takes more than 30 seconds to connect, please try rejoining.</p>
+          <p className="text-[12px]">
+            If it takes more than 30 seconds to connect, please try rejoining.
+          </p>
         </div>
       )}
       {/* you */}
@@ -176,6 +85,7 @@ export default function Call() {
       {/* participants */}
 
       <div className="h-28 max-w-full flex justify-start gap-1 overflow-x-auto">
+        {participants.length}
         {participants.map((participant) => (
           <div
             key={participant.id}
