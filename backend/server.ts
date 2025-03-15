@@ -1,11 +1,19 @@
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
-const groupRouter = require("./api/routers/group");
-const { ConvertError, NotFound, ErrorHandler } = require("./middleware/error");
+import { Socket } from "socket.io";
+
+import express from "express";
+import cors from "cors";
+import groupRouter from "./api/routers/group";
+import { ConvertError, NotFound, ErrorHandler } from "./middleware/error";
+import bodyParser from "body-parser";
+
 const app = express();
+
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }));
+
+// parse application/json
+app.use(bodyParser.json());
 app.use(cors());
-app.use(express.json());
 
 app.use("/api/v1", groupRouter);
 
@@ -27,9 +35,9 @@ app.use(ErrorHandler);
 
 const io = require("socket.io")(server);
 
-io.on("connection", (socket) => {
+io.on("connection", (socket: Socket) => {
   // When a user joins a room
-  socket.on("join-room", (roomId, userId) => {
+  socket.on("join-room", (roomId: string, userId: string) => {
     // Join the room
     socket.join(roomId);
 

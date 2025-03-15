@@ -1,42 +1,20 @@
-// const API = axios.create({
-//   // baseURL: "https://lingomeetbackend.onrender.com/api/v1",
-//   baseURL: "http://localhost:3000/api/v1",
-// });
-
-// // Response interceptor
-// API.interceptors.response.use(
-//   (response: any) => {
-//     // Handle the response data here
-//     if (response.data && response.data.data.errors) {
-//       return Promise.reject({
-//         response: {
-//           status: 403,
-//           data: response.data,
-//         },
-//       });
-//     }
-//     return response;
-//   },
-//   (error: any) => {
-//     // Handle errors here
-//     if (error.response && error.response.status >= 401) {
-//       // Optionally, redirect the user to the sign-in page
-//       window.location.href = "/notfound";
-//     }
-//     return Promise.reject(error);
-//   }
-// );
-
-// export default API;
-
 import axios, { AxiosInstance, AxiosRequestConfig } from "axios";
 
 interface NextApiClientInstance extends AxiosInstance {
-  get<T = any, R = T>(url: string, config?: AxiosRequestConfig): Promise<R>;
+  get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
+  post<T = any, R = any>(
+    url: string,
+    body?: T,
+    config?: AxiosRequestConfig
+  ): Promise<R>;
 }
 
+// TODO: merge to one
 const API: NextApiClientInstance = axios.create({
-  // baseURL: "https://lingomeetbackend.onrender.com/api/v1",
+  baseURL: "http://localhost:3000/api/v1",
+});
+
+export const POST_API: NextApiClientInstance = axios.create({
   baseURL: "http://localhost:3000/api/v1",
 });
 
@@ -69,6 +47,20 @@ API.interceptors.response.use(
     }
 
     return Promise.reject({ message });
+  }
+);
+
+// TODO: add flexibility to handle errors
+POST_API.interceptors.response.use(
+  (response: any) => {
+    return response.data;
+  },
+  (error: any) => {
+    const errors: Record<string, Record<string, string>> = {};
+    error.response.data.errors.forEach((error: Record<string, string>) => {
+      return (errors[error.field] = { message: error.messages });
+    });
+    return { errors };
   }
 );
 

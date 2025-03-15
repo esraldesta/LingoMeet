@@ -16,6 +16,7 @@ const Handler = (err, req, res, next) => {
     stack: err.stack,
   };
   delete response.stack;
+  console.error(response.message);
   res.status(response.code).json(response);
   res.end();
 };
@@ -52,9 +53,9 @@ exports.ConvertError = (err, req, res, next) => {
         status: 400,
         errors: [
           {
-            "field": field,
-            "location": "body",
-            "messages": `This ${field} is alreday taken`,
+            field: field,
+            location: "body",
+            messages: `This ${field} is alreday taken`,
           },
         ],
       });
