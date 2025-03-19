@@ -5,6 +5,9 @@ import cors from "cors";
 import groupRouter from "./api/routers/group";
 import { ConvertError, NotFound, ErrorHandler } from "./middleware/error";
 import bodyParser from "body-parser";
+import { validate } from "./middleware/validation";
+import { createGroup } from "./api/validations/group";
+import { body } from "express-validator";
 
 const app = express();
 

@@ -1,15 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import { Create, GetAll, DeleteOne } from "../services/group";
 import { OK, CREATED } from "../../utils/constants";
-import { GroupRequestBody } from "../validations/group";
+import { CreateGroupDTO } from "../../types/group";
 
 export const create = async (
-  req: Request<{}, {}, GroupRequestBody>,
+  req: Request<{}, {}, CreateGroupDTO>,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    console.log(req.body, "req.body");
     const response = await Create(req.body);
     res.status(CREATED).json({
       data: response,

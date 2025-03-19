@@ -39,7 +39,7 @@ model Participant {
 
 model Language {
   id        String    @id @default(uuid())
-  name      String
+  name      String     @unique
   createdAt DateTime  @default(now()) @map("createdAt")
   updatedAt DateTime  @default(now()) @updatedAt @map("updatedAt")
   groups    Group[]   @relation("GroupLanguages")  // Explicit relation name
@@ -47,8 +47,7 @@ model Language {
 
 model Level {
   id        String           @id @default(uuid())
-  groupId   String
-  name      ProficiencyLevel
+  name      ProficiencyLevel  @unique
   createdAt DateTime         @default(now()) @map("createdAt")
   updatedAt DateTime         @default(now()) @updatedAt @map("updatedAt")
   groups     Group[]          @relation("GroupLevels")
