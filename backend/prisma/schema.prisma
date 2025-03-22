@@ -81,6 +81,7 @@ model User {
   lastName  String?
   createdAt DateTime  @default(now()) @map("createdAt")
   updatedAt DateTime  @default(now()) @updatedAt @map("updatedAt")
+  roles     String    @default("[USER]")
   Participants Participant[]
   accounts   Account[]
 }
@@ -100,3 +101,8 @@ enum Providers {
   GOOGLE
   EMAIL
   }
+
+enum Roles {
+  ADMIN
+  USER
+}

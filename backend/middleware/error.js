@@ -1,4 +1,4 @@
-const APIError = require("../utils/APIError");
+import APIError from "../utils/APIError";
 
 const Handler = (err, req, res, next) => {
   let _message = "";
