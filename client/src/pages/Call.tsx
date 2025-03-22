@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Ref, RefObject, useEffect, useRef, useState } from "react";
 import { MediaConnection, Peer } from "peerjs";
 import { io, SocketOptions } from "socket.io-client";
 import { useParams } from "react-router";
@@ -43,6 +43,8 @@ export default function Call() {
     peerConnections,
   });
 
+  const ref = useRef<HTMLDivElement>(null);
+
   return (
     <div className="h-[80vh] flex flex-col items-center relative pt-2 px-2">
       {!conn && (
@@ -55,8 +57,12 @@ export default function Call() {
       )}
       {/* you */}
 
-      <Draggable>
-        <div className="absolute right-0 top-0 h-32 w-32 shrink-0 rounded bg-blue-800 overflow-clip z-50">
+      <Draggable nodeRef={ref as RefObject<HTMLElement>}>
+        {/* @ts-ignore */}
+        <div
+          className="absolute right-0 top-0 h-32 w-32 shrink-0 rounded bg-blue-800 overflow-clip z-50"
+          ref={ref as Ref<HTMLDivElement>}
+        >
           <video
             ref={myVideoRef}
             autoPlay
