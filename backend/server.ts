@@ -3,6 +3,8 @@ import { Socket } from "socket.io";
 import express from "express";
 import cors from "cors";
 import groupRouter from "./api/routers/group";
+import authRouter from "./api/routers/auth";
+
 import { ConvertError, NotFound, ErrorHandler } from "./middleware/error";
 import bodyParser from "body-parser";
 import { validate } from "./middleware/validation";
@@ -19,6 +21,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 app.use("/api/v1", groupRouter);
+app.use("/api/v1/auth", authRouter);
 
 // main().catch((err) => console.log(err));
 

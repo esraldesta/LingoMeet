@@ -11,7 +11,8 @@ export const create = async (
   try {
     const response = await Create(req.body);
     res.status(CREATED).json({
-      data: response,
+      values: response,
+      errors: {},
       success: "SUCCESS",
     });
   } catch (err) {

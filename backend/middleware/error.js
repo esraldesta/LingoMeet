@@ -1,4 +1,3 @@
-const { ValidationError } = require("express-validation");
 const APIError = require("../utils/APIError");
 
 const Handler = (err, req, res, next) => {
