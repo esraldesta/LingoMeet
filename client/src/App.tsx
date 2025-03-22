@@ -13,6 +13,7 @@ import { ConnectionManager } from "@/components/ConnectionManager";
 import { GroupProvider } from "@/context/GroupContext";
 import { Providers } from "./providers";
 import { FloatingWindow } from "./components/call/floating-window";
+import SignIn from "./pages/SignIn";
 
 function App() {
   return (
@@ -27,10 +28,12 @@ function App() {
                   <Route path="/" element={<Layout />}>
                     <Route index element={<Home />} />
                     <Route path="/home" element={<Home />} />
-                    <Route path="/call/:id" element={<Call />} />
+                    <Route path="/group/:id" element={<Call />} />
                     <Route path="/conn" element={<ConnectionManager />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/support" element={<Support />} />
+                    <Route path="/sign-in" element={<SignIn />} />
+                    {/* <Route path="/register" element={<Register />} /> */}
                     <Route path="*" element={<NotFound />} />
                   </Route>
                 </Routes>
