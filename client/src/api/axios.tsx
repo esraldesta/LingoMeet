@@ -56,9 +56,10 @@ POST_API.interceptors.response.use(
     return response.data;
   },
   (error: any) => {
+    console.log(error, "formerror");
     const errors: Record<string, Record<string, string>> = {};
     error.response.data.errors.forEach((error: Record<string, string>) => {
-      return (errors[error.field] = { message: error.messages });
+      return (errors[error.path] = { message: error.msg });
     });
     return { errors };
   }

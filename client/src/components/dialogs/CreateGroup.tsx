@@ -12,11 +12,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import API, { POST_API } from "@/api/axios";
 import { useGroups } from "@/context/GroupContext";
-import { useForm } from "react-hook-form";
+import { set, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { group_schema, LEVELS } from "@/lib/validations";
 import {
@@ -41,18 +41,12 @@ import {
   CommandList,
 } from "../ui/command";
 import { Languages } from "@/constants";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
 import { ObjectToformData } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
 
 type ActionState = {
   errors: Record<string, { message: string }>;
-  values: string;
+  values: { [key: string]: any } | null;
 };
 
 async function handleSubmit(init: ActionState, fData: FormData) {
@@ -60,20 +54,27 @@ async function handleSubmit(init: ActionState, fData: FormData) {
 }
 
 export function CreateGroup() {
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+
   const [state, formAction, isPending] = useActionState(handleSubmit, {
-    values: "",
+    values: null,
     errors: {},
   });
 
   const [_, startTransition] = useTransition();
 
-  const [open, setOpen] = useState(false);
-
   function handle(data: Zod.infer<typeof group_schema>) {
     const fData = ObjectToformData(data);
-    alert(JSON.stringify(data));
     startTransition(() => formAction(fData));
   }
+
+  useEffect(() => {
+    if (state.values) {
+      setOpen(false);
+      navigate(`/group/${state.values.id}`);
+    }
+  }, [state]);
 
   const form = useForm({
     resolver: zodResolver(group_schema),
@@ -219,6 +220,7 @@ export function CreateGroup() {
               )}
             />
 
+            {/* LEVELS */}
             <FormField
               control={form.control}
               name="levels"
@@ -288,41 +290,6 @@ export function CreateGroup() {
               )}
             />
 
-            {/* Level */}
-            {/* <FormField
-              control={form.control}
-              name="levels"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Levels
-                    <span className="astrics"> * </span>
-                  </FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value[0]}
-                  >
-                    <FormControl className="focus:border-none focus-visible:outline-none py-4">
-                      <SelectTrigger
-                        {...field}
-                        className="bg-primary-100 w-full px-3 py-2.5 focus:border-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-button focus:ring-0"
-                      >
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {LEVELS.map((l) => (
-                        <SelectItem value={l} key={l}>
-                          {l}{" "}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage className="text-sm text-red-500" />
-                </FormItem>
-              )}
-            /> */}
-
             {/* Number of People */}
             <FormField
               control={form.control}
@@ -374,70 +341,6 @@ export function CreateGroup() {
             </AlertDialogFooter>
           </form>
         </Form>
-
-        {/* <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="title" className="text-right">
-              Group Name
-            </Label>
-            <div className="col-span-3">
-              <span className="block mb-1">
-                {errors.title && (
-                  <div className="text-red-600 text-xs">{errors.title}</div>
-                )}
-              </span>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => {
-                  setTitle(e.target.value);
-                }}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="topic" className="text-right">
-              Topic
-            </Label>
-            <div className="col-span-3">
-              <span className="block mb-1">
-                {errors.topic && (
-                  <div className="text-red-600 text-xs">{errors.topic}</div>
-                )}
-              </span>
-              <Input
-                id="topic"
-                value={Topic}
-                onChange={(e) => {
-                  setTopic(e.target.value);
-                }}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="lang" className="text-right">
-              Language
-            </Label>
-            <div className="col-span-3">
-              <span className="block mb-1">
-                {errors.language && (
-                  <div className="text-red-600 text-xs">{errors.language}</div>
-                )}
-              </span>
-              <Input
-                id="lang"
-                value={language}
-                onChange={(e) => {
-                  setLanguage(e.target.value);
-                }}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-        </div> */}
       </AlertDialogContent>
     </AlertDialog>
   );
