@@ -49,13 +49,13 @@ const Home = () => {
         ))}
       </div>
 
-      {JSON.stringify(data)}
-      {/* <div className="flex flex-wrap justify-center">
+      {/* {JSON.stringify(data)} */}
+      <div className="flex flex-wrap justify-center">
         {data.data.length === 0 && <p>No Group Found</p>}
         {data.data.map((group: Group) => (
           <GroupCard key={group.id} group={group} />
         ))}
-      </div> */}
+      </div>
     </div>
   );
 };
