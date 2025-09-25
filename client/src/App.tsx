@@ -12,7 +12,7 @@ import Call from "@/pages/Call";
 import { ConnectionManager } from "@/components/ConnectionManager";
 import { GroupProvider } from "@/context/GroupContext";
 import { Providers } from "./providers";
-import { FloatingWindow } from "./components/call/floating-window";
+// import { FloatingWindow } from "./components/call/floating-window";
 import SignIn from "./pages/SignIn";
 
 function App() {
@@ -23,7 +23,7 @@ function App() {
           <GroupProvider>
             <AnimatePresence mode="wait">
               <BrowserRouter>
-                <FloatingWindow />
+                {/* <FloatingWindow /> */}
                 <Routes>
                   <Route path="/" element={<Layout />}>
                     <Route index element={<Home />} />

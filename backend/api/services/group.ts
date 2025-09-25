@@ -26,30 +26,38 @@ export const Create = async (data: CreateGroupDTO): Promise<Group> => {
   return response;
 };
 
-export const GetAll = async (req: Request): Promise<Group[]> => {
+export const GetAll = async (req: Request): Promise<{ groups: Group[]; totalCount: number }> => {
   const { limit, page, searchQuery } = req.query as GetAllQueryParams;
-  const skip = (Number(page) - 1) * (Number(limit) || 10) || 5;
+  const skip = (Number(page) - 1) * (Number(limit) || 10) || 0;
   let filter: any = {};
 
   if (searchQuery) {
     filter = {
       OR: [
         { topic: { contains: searchQuery, mode: "insensitive" } },
-        { languages: { has: searchQuery } },
+        { languages: { some: { name: { contains: searchQuery, mode: "insensitive" } } } },
       ],
     };
   }
 
-  const response = await prisma.group.findMany({
+  const totalCount = await prisma.group.count({ where: filter });
+
+  const groups = await prisma.group.findMany({
     where: filter,
     skip: skip,
     take: Number(limit) || 10,
+    include: {
+      levels: true,
+      languages: true,
+    },
     orderBy: {
       createdAt: "desc",
     },
   });
-  return response;
+
+  return { groups, totalCount };
 };
+
 
 export const DeleteOne = async (req: Request): Promise<void> => {
   const { id } = req.params;

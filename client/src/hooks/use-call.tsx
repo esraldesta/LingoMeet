@@ -15,7 +15,7 @@ export function UseCall({
   setPeerConnections,
   peerConnections,
 }: {
-  roomId: string;
+  roomId: string | undefined;
   setConn: (conn: string | null) => void;
   setParticipants: Dispatch<SetStateAction<Participant[]>>;
   myVideoRef: React.RefObject<HTMLVideoElement>;

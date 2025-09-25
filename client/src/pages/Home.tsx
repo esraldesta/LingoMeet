@@ -5,174 +5,196 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "../components/ui/popover";
-import { Ellipsis, Languages } from "lucide-react";
-import { useEffect } from "react";
+import { Ellipsis } from "lucide-react";
 import API from "../api/axios";
-import { useGroups } from "../context/GroupContext";
-import { Card } from "../components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { MostSearched } from "@/constants";
 import { Group } from "@/types";
+import { Lock, Globe, Users, UserPlus } from "lucide-react";
+import { useState } from "react";
 
-async function fetchGroups() {
-  return await API.get("/");
-}
+const LIMIT = 3;
 
-// App component (example usage)
-const Home = () => {
-  const { data, error, isPending } = useQuery({
-    queryKey: ["groups"],
-    queryFn: () => fetchGroups(),
+export async function fetchGroups({ page = 1, limit = 6, searchQuery = "" }): Promise<{ groups: Group[]; totalCount: number }> {
+  const res = await API.get("/", {
+    params: {
+      page,
+      limit,
+      searchQuery,
+    },
   });
 
-  if (isPending) {
-    return <div>Loading...</div>;
-  }
+  return res.data; // returns { groups: Group[], totalCount: number }
+}
 
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
+const Home = () => {
+  const [page, setPage] = useState(1);
+
+  const { data, isPending, error, isFetching } = useQuery({
+    queryKey: ["groups", page],
+    queryFn: () => fetchGroups({ page, limit: LIMIT }),
+    // keepPreviousData: true,
+  });
+
+  if (isPending) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  const totalPages = Math.ceil(data.totalCount / LIMIT);
 
   return (
-    <div>
+    <div className="max-w-7xl mx-auto px-4">
+      {/* Language Filter */}
       <div className="flex gap-1 justify-end p-2 relative mt-5">
         <span className="absolute right-2 -top-3 text-sm text-primary">
           Most searched languages
         </span>
-        <Button size="xs" variant="secondary">
-          Any
-        </Button>
+        <Button variant="secondary">Any</Button>
         {MostSearched.map((language) => (
-          <Button size="xs" key={language.value} variant="secondary">
+          <Button key={language.value} variant="secondary">
             {language.label}
           </Button>
         ))}
       </div>
 
-      {/* {JSON.stringify(data)} */}
-      <div className="flex flex-wrap justify-center">
-        {data.data.length === 0 && <p>No Group Found</p>}
-        {data.data.map((group: Group) => (
-          <GroupCard key={group.id} group={group} />
-        ))}
+      {/* Group Cards */}
+      <div className="flex flex-wrap justify-center gap-4 mt-6">
+        {data.groups.length === 0 ? (
+          <p className="text-muted-foreground">No Groups Found</p>
+        ) : (
+          data.groups.map((group) => <GroupCard key={group.id} group={group} />)
+        )}
       </div>
+
+      {/* Pagination */}
+      <div className="flex justify-center items-center mt-8 space-x-2">
+        <Button
+          variant="outline"
+          disabled={page === 1}
+          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+        >
+          Previous
+        </Button>
+
+        <span className="text-sm text-muted-foreground">
+          Page {page} of {totalPages}
+        </span>
+
+        <Button
+          variant="outline"
+          disabled={page === totalPages}
+          onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+        >
+          Next
+        </Button>
+      </div>
+
+      {isFetching && <p className="text-center text-xs mt-2">Fetching more...</p>}
     </div>
   );
 };
 
 export default Home;
 
-function getRandomArbitrary(min, max) {
-  return Math.floor(Math.random() * (max - min) + min);
+
+function getInitials(name: string) {
+  return name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 }
 
-// AvatarGroup component
+// Simulate avatars (placeholder)
 const AvatarGroup = () => {
-  const max = getRandomArbitrary(2, 5);
-  const total = [1, 2, 3, 4, 5, 6, 7, 8];
-  const displayedAvatars = total.slice(0, max);
-  const remainingCount = total.length - max;
+  const total = [1, 2, 3, 4, 5, 6];
+  const max = 4;
+  const displayed = total.slice(0, max);
+  const remaining = total.length - max;
 
   return (
-    <div className="flex -space-x-2 mx-auto mt-3">
-      {displayedAvatars.map((index) => (
+    <div className="flex -space-x-3 mt-2">
+      {displayed.map((i) => (
         <div
-          key={index}
-          className="h-10 w-10 rounded-full ring-2 ring-white bg-gray-200 dark:bg-primary text-sm flex items-center justify-center"
+          key={i}
+          className="h-9 w-9 rounded-full border-2 border-background bg-muted text-xs flex items-center justify-center font-semibold shadow-sm"
         >
           TM
         </div>
       ))}
-      {remainingCount > 0 && (
-        <div className="inline-block h-10 w-10 rounded-full ring-2 ring-white bg-gray-200 dark:bg-primary text-sm flex items-center justify-center">
-          +{remainingCount}
+      {remaining > 0 && (
+        <div className="h-9 w-9 rounded-full border-2 border-background bg-muted text-xs flex items-center justify-center font-semibold shadow-sm">
+          +{remaining}
         </div>
       )}
     </div>
   );
 };
 
-// GroupCard component
+function getRandomArbitrary(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min) + min);
+}
+
 const GroupCard = ({ group }: { group: Group }) => {
   return (
-    <div className="bg-secondary shadow-md rounded-lg p-1 flex flex-col justify-between w-[300px] max-w-sm m-4">
-      <div className="grid grid-cols-2">
-        <h2 className="text-lg font-semibold text-left mb-4 ml-2">
-          {group.topic}
-        </h2>
+    <div className="relative bg-card text-card-foreground border border-border shadow-sm hover:shadow-md rounded-xl p-4 w-[320px] max-w-sm transition-all duration-300">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <h3 className="text-lg font-semibold line-clamp-1">{group.topic}</h3>
 
-        <div className="flex justify-end items-start mr-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button>
-                <Ellipsis />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-xs-0 w-fit mr-1">
-              <div>
-                <p className="text-center pb-1">Group Owner</p>
-                <div className="flex flex-col items-center pb-1">
-                  {/* <img
-                    className="w-20 h-20 mb-1 rounded-full shadow-lg"
-                    src="https://bit.ly/ryan-florence"
-                    alt="Bonnie image"
-                  /> */}
-                  <div className="h-10 w-10 rounded-full ring-2 ring-white bg-gray-200 dark:bg-primary text-sm flex items-center justify-center">
-                    TM
-                  </div>
-                  <h5 className="mb-1 text-xl font-medium text-gray-900 dark:text-white">
-                    Anonymous
-                  </h5>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Description
-                  </span>
-                </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="text-muted-foreground hover:text-foreground">
+              <Ellipsis size={18} />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-56 mr-2 p-4 text-sm space-y-2 bg-popover text-popover-foreground border border-border">
+            <p className="font-medium">Group Owner</p>
+            <div className="flex flex-col items-center">
+              <div className="h-12 w-12 rounded-full bg-muted text-sm flex items-center justify-center font-bold">
+                TM
               </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+              <p className="mt-1 text-sm">Anonymous</p>
+              <span className="text-xs text-muted-foreground">
+                No description available
+              </span>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
-      <div className="flex flex-col items-start ml-2">
-        <div>
-          Language:
-          <div className="flex gap-2 flex-wrap">
-            {group.languages.map((language) => (
-              <span className="font-semibold mb-4 text-primary">
-                {language}
+      {/* Details */}
+      <div className="mt-4 space-y-1 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <Users size={16} />
+          <span>{getRandomArbitrary(2, 8)} / {group.maxPeople} people</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Globe size={16} />
+          <span className="space-x-2">
+            {group.languages.map((lang, i) => (
+              <span key={lang.id}>
+                {lang.name}
+                {group.levels[i] ? ` (${group.levels[i].name})` : ""}
               </span>
             ))}
-          </div>
+          </span>
         </div>
 
-        <div>
-          Topic:
-          <span className="text-sm font-semibold mb-4"> {group.topic}</span>
+        <div className="flex items-center gap-2">
+          {group.isPrivate ? <Lock size={16} /> : <Globe size={16} />}
+          <span>{group.isPrivate ? "Private" : "Public"}</span>
         </div>
       </div>
-      {/* Avatar group */}
+
+      {/* Avatars */}
       <AvatarGroup />
 
-      {/* Join button */}
+      {/* CTA Button */}
       <Link
-        to={`/call/${group.id}`}
-        className="mt-4 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg"
+        to={`/group/${group.id}`}
+        className="mt-4 inline-flex items-center justify-center w-full bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium py-2 px-4 rounded-lg transition-colors"
       >
-        Join
+        <UserPlus size={16} className="mr-2" />
+        Join Group
       </Link>
     </div>
   );
 };
 
-// const groups = [
-//   {
-//     name: "Group A",
-//     avatars: [
-//       { name: "Ryan Florence", src: "https://bit.ly/ryan-florence" },
-//       { name: "Segun Adebayo", src: "https://bit.ly/sage-adebayo" },
-//       { name: "Kent Dodds", src: "https://bit.ly/kent-c-dodds" },
-//       { name: "Prosper Otemuyiwa", src: "https://bit.ly/prosper-baba" },
-//       { name: "Christian Nwamba", src: "https://bit.ly/code-beast" },
-//     ],
-//   },
-//   ]
