@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified Boolean   @default(false) @map("email_verified")
+  image         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  accounts      Account[]
+  sessions      Session[]
+  verification  Verification[]
+
+  @@map("user")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  accountId         String  @map("account_id")
+  providerId        String  @map("provider_id")
+  accessToken       String? @map("access_token") @db.Text
+  refreshToken      String? @map("refresh_token") @db.Text
+  idToken           String? @map("id_token") @db.Text
+  accessTokenExpiresAt DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope             String?
+  password          String?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@map("account")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  token     String   @unique
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String?  @map("user_id")
+
+  @@unique([identifier, value])
+  @@map("verification")
+}
+
+// User profiles table (extends BetterAuth User)
+model UserProfile {
+  id                   String    @id @default(uuid()) @db.Uuid
+  userId               String    @unique
+  displayName          String?    @map("display_name")
+  bio                 String?
+  avatarUrl           String?    @map("avatar_url")
+  preferredLanguages  String[]   @default([]) @map("preferred_languages")
+  learningLanguages   String[]   @default([]) @map("learning_languages")
+  userType            String     @default("general") @map("user_type")
+  subscriptionStatus  String     @default("free") @map("subscription_status")
+  subscriptionStartDate DateTime? @map("subscription_start_date")
+  subscriptionEndDate   DateTime? @map("subscription_end_date")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+
+  @@map("user_profiles")
+}
+
+model Room {
+  id                String    @id @default(uuid()) @db.Uuid
+  name              String
+  description       String?
+  roomType         String     @default("general") @map("room_type")
+  language         String
+  topic            String?
+  isPublic         Boolean    @default(true) @map("is_public")
+  maxParticipants  Int        @default(10) @map("max_participants")
+  createdBy        String     @map("created_by")
+  teacherId        String?     @map("teacher_id")
+  status           String     @default("active")
+  scheduledStartTime DateTime? @map("scheduled_start_time")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+
+  participants     RoomParticipant[]
+  messages         RoomMessage[]
+  studentProgress  StudentProgress[]
+
+  @@index([createdBy])
+  @@index([teacherId])
+  @@index([status])
+  @@map("rooms")
+}
+
+model RoomParticipant {
+  id        String    @id @default(uuid()) @db.Uuid
+  roomId    String    @map("room_id") @db.Uuid
+  userId    String    @map("user_id")
+  joinedAt  DateTime  @default(now()) @map("joined_at")
+  leftAt    DateTime? @map("left_at")
+  role      String    @default("participant")
+
+  room      Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@index([userId])
+  @@map("room_participants")
+}
+
+model RoomMessage {
+  id        String    @id @default(uuid()) @db.Uuid
+  roomId    String    @map("room_id") @db.Uuid
+  userId    String    @map("user_id")
+  message   String
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  room      Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@map("room_messages")
+}
+
+model StudentTeacherRelationship {
+  id        String    @id @default(uuid()) @db.Uuid
+  teacherId String    @map("teacher_id")
+  studentId String    @map("student_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@unique([teacherId, studentId])
+  @@index([teacherId])
+  @@index([studentId])
+  @@map("student_teacher_relationships")
+}
+
+model StudentProgress {
+  id           String    @id @default(uuid()) @db.Uuid
+  studentId    String    @map("student_id")
+  teacherId    String    @map("teacher_id")
+  roomId       String?   @map("room_id") @db.Uuid
+  activityType String    @map("activity_type")
+  score        Int?
+  feedback     String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  room         Room?     @relation(fields: [roomId], references: [id], onDelete: SetNull)
+
+  @@index([studentId])
+  @@index([teacherId])
+  @@map("student_progress")
+}
