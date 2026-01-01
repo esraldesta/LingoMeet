@@ -28,9 +28,9 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 mt-16">
+        <div className="grid md:grid-cols-4 gap-8 mt-16">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-            <h2 className="text-2xl font-semibold mb-3">Practice Rooms</h2>
+            <h2 className="text-2xl font-semibold mb-3">Practice Room</h2>
             <p className="text-gray-600 dark:text-gray-300">
               Join conversation rooms with other learners to practice speaking in real-time.
             </p>
@@ -45,6 +45,12 @@ export default function HomePage() {
             <h2 className="text-2xl font-semibold mb-3">AI Practice</h2>
             <p className="text-gray-600 dark:text-gray-300">
               Practice with AI that provides real-time feedback on your language skills.
+            </p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 className="text-2xl font-semibold mb-3">Professional Sessions</h2>
+            <p className="text-gray-600 dark:text-gray-300">
+              Get personalized guidance from verified language professionals in 1-on-1 sessions.
             </p>
           </div>
         </div>

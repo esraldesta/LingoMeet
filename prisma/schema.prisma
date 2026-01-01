@@ -13,12 +13,14 @@ model User {
   email         String    @unique
   emailVerified Boolean   @default(false) @map("email_verified")
   image         String?
+  role          String    @default("user") @map("role") // user, admin, professional
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
   accounts      Account[]
   sessions      Session[]
   verification  Verification[]
+  professional  Professional?
 
   @@map("user")
 }
@@ -174,4 +176,142 @@ model StudentProgress {
   @@index([studentId])
   @@index([teacherId])
   @@map("student_progress")
+}
+
+model Professional {
+  id                String    @id @default(uuid()) @db.Uuid
+  userId            String    @unique @map("user_id")
+  displayName       String    @map("display_name")
+  bio               String?
+  avatarUrl         String?   @map("avatar_url")
+  languages         String[]  @map("languages")
+  certifications    String[]  @map("certifications")
+  experience        String?   @map("experience")
+  accent            String?   @map("accent")
+  level             String    @map("level") // beginner, intermediate, advanced
+  pricePerMinute    Float     @map("price_per_minute")
+  isVerified        Boolean   @default(false) @map("is_verified")
+  verificationDate  DateTime? @map("verification_date")
+  rating            Float?    @default(0)
+  reviewCount       Int       @default(0) @map("review_count")
+  totalSessions     Int       @default(0) @map("total_sessions")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions          ProfessionalSession[]
+  bookings          Booking[]
+  reviews           ProfessionalReview[]
+  availability      ProfessionalAvailability[]
+
+  @@index([isVerified])
+  @@index([rating])
+  @@index([languages])
+  @@map("professionals")
+}
+
+model ProfessionalAvailability {
+  id            String    @id @default(uuid()) @db.Uuid
+  professionalId String    @map("professional_id") @db.Uuid
+  dayOfWeek     Int       @map("day_of_week") // 0-6 (Sunday-Saturday)
+  startTime     String    @map("start_time") // HH:MM format
+  endTime       String    @map("end_time") // HH:MM format
+  isAvailable   Boolean   @default(true) @map("is_available")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  professional  Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@unique([professionalId, dayOfWeek, startTime])
+  @@map("professional_availability")
+}
+
+model ProfessionalSession {
+  id             String    @id @default(uuid()) @db.Uuid
+  professionalId String    @map("professional_id") @db.Uuid
+  title          String?
+  description    String?
+  language       String
+  maxParticipants Int      @default(1) @map("max_participants")
+  pricePerMinute Float     @map("price_per_minute")
+  status         String    @default("scheduled") // scheduled, ongoing, completed, cancelled
+  scheduledStart DateTime  @map("scheduled_start")
+  scheduledEnd   DateTime  @map("scheduled_end")
+  actualStart    DateTime? @map("actual_start")
+  actualEnd      DateTime? @map("actual_end")
+  meetingUrl     String?   @map("meeting_url")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  booking        Booking?
+  participants   SessionParticipant[]
+
+  @@index([professionalId])
+  @@index([status])
+  @@index([scheduledStart])
+  @@map("professional_sessions")
+}
+
+model Booking {
+  id             String    @id @default(uuid()) @db.Uuid
+  professionalId String    @map("professional_id") @db.Uuid
+  sessionId      String    @map("session_id") @unique @db.Uuid
+  learnerId      String    @map("learner_id")
+  status         String    @default("pending") // pending, confirmed, cancelled, completed
+  totalPrice     Float     @map("total_price")
+  platformFee    Float     @map("platform_fee") // 20-30% commission
+  professionalEarnings Float @map("professional_earnings")
+  paymentStatus  String    @default("pending") @map("payment_status") // pending, paid, refunded
+  paymentId      String?   @map("payment_id")
+  bookedAt       DateTime  @default(now()) @map("booked_at")
+  confirmedAt    DateTime? @map("confirmed_at")
+  cancelledAt    DateTime? @map("cancelled_at")
+  completedAt    DateTime? @map("completed_at")
+  notes          String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  professional   Professional         @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  session        ProfessionalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  review         ProfessionalReview?
+
+  @@index([professionalId])
+  @@index([learnerId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@map("bookings")
+}
+
+model SessionParticipant {
+  id         String    @id @default(uuid()) @db.Uuid
+  sessionId  String    @map("session_id") @db.Uuid
+  userId     String    @map("user_id")
+  joinedAt   DateTime  @default(now()) @map("joined_at")
+  leftAt     DateTime? @map("left_at")
+  role       String    @default("learner")
+
+  session    ProfessionalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@map("session_participants")
+}
+
+model ProfessionalReview {
+  id            String    @id @default(uuid()) @db.Uuid
+  professionalId String    @map("professional_id") @db.Uuid
+  bookingId     String    @unique @map("booking_id") @db.Uuid
+  learnerId     String    @map("learner_id")
+  rating        Int       // 1-5 stars
+  comment       String?
+  isPublic      Boolean   @default(true) @map("is_public")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  professional  Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  booking       Booking?    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([professionalId])
+  @@index([rating])
+  @@map("professional_reviews")
 }

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Users, Video, LogOut } from "lucide-react";
+import { Plus, Users, Video, LogOut, GraduationCap, Calendar, Star, Shield } from "lucide-react";
 
 interface Room {
   id: string;
@@ -75,6 +75,13 @@ export default function DashboardPage() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Talk</h1>
           <div className="flex items-center gap-4">
+            <Link
+              href="/admin"
+              className="flex items-center gap-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+            >
+              <Shield className="w-4 h-4" />
+              Admin
+            </Link>
             <span className="text-gray-700 dark:text-gray-300">
               {session?.user?.name || session?.user?.email}
             </span>
@@ -90,62 +97,114 @@ export default function DashboardPage() {
       </nav>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Your Rooms</h2>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            Create Room
-          </button>
-        </div>
+        <div className="grid lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-3">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Your Rooms</h2>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                Create Room
+              </button>
+            </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {rooms.map((room) => (
-            <div
-              key={room.id}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                    {room.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    {room.description || "No description"}
-                  </p>
-                  <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <Video className="w-4 h-4" />
-                      {room.language}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="w-4 h-4" />
-                      {room.participant_count || 0}/{room.max_participants}
-                    </span>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {rooms.map((room) => (
+                <div
+                  key={room.id}
+                  className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        {room.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        {room.description || "No description"}
+                      </p>
+                      <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <Video className="w-4 h-4" />
+                          {room.language}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          {room.participant_count || 0}/{room.max_participants}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {room.participant_count !== undefined && room.participant_count >= room.max_participants ? (
+                      <button
+                        disabled
+                        className="flex-1 text-center px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed"
+                      >
+                        Room Full
+                      </button>
+                    ) : (
+                      <Link
+                        href={`/room/${room.id}`}
+                        className="flex-1 text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Join Room
+                      </Link>
+                    )}
                   </div>
                 </div>
-              </div>
-              <div className="flex gap-2">
-                {room.participant_count !== undefined && room.participant_count >= room.max_participants ? (
-                  <button
-                    disabled
-                    className="flex-1 text-center px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed"
-                  >
-                    Room Full
-                  </button>
-                ) : (
-                  <Link
-                    href={`/room/${room.id}`}
-                    className="flex-1 text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Join Room
-                  </Link>
-                )}
+              ))}
+            </div>
+          </div>
+
+          <div className="lg:col-span-1">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <GraduationCap className="w-5 h-5" />
+                Professional Sessions
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                Get personalized guidance from verified language professionals
+              </p>
+              <div className="space-y-3">
+                <Link
+                  href="/professionals"
+                  className="block w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-center"
+                >
+                  Browse Professionals
+                </Link>
+                <Link
+                  href="/book-session"
+                  className="block w-full px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors text-center"
+                >
+                  Book Session
+                </Link>
+                <Link
+                  href="/professional-signup"
+                  className="block w-full px-4 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-50 dark:hover:bg-green-900 transition-colors text-center"
+                >
+                  Become a Professional
+                </Link>
               </div>
             </div>
-          ))}
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Upcoming Sessions
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                No upcoming professional sessions booked
+              </p>
+              <Link
+                href="/professionals"
+                className="text-blue-600 hover:underline text-sm"
+              >
+                Find a professional →
+              </Link>
+            </div>
+          </div>
         </div>
 
         {rooms.length === 0 && !loading && (
