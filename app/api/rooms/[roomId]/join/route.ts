@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { roomId: string } }
+  { params }: { params: Promise<{ roomId: string }> }
 ) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -13,6 +13,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { roomId } = await params;
     const body = await request.json();
     const { peerId } = body;
 
@@ -22,7 +23,7 @@ export async function POST(
 
     // Check if room exists and get current participant count
     const room = await prisma.room.findUnique({
-      where: { id: params.roomId },
+      where: { id: roomId },
       include: {
         participants: {
           where: {
@@ -39,7 +40,7 @@ export async function POST(
     // Check if user is already a participant
     const existingParticipant = await prisma.roomParticipant.findFirst({
       where: {
-        roomId: params.roomId,
+        roomId: roomId,
         userId: session.user.id,
         leftAt: null,
       },
@@ -61,7 +62,7 @@ export async function POST(
 
       await prisma.roomParticipant.create({
         data: {
-          roomId: params.roomId,
+          roomId: roomId,
           userId: session.user.id,
           role
         },

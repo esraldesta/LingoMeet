@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { roomId: string } }
+  { params }: { params: Promise<{ roomId: string }> }
 ) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -13,10 +13,11 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { roomId } = await params;
     // Mark participant as left
     await prisma.roomParticipant.updateMany({
       where: {
-        roomId: params.roomId,
+        roomId: roomId,
         userId: session.user.id,
         leftAt: null,
       },

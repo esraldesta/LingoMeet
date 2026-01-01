@@ -22,7 +22,15 @@ export default function RoomPage() {
           return;
         }
 
-        const response = await fetch(`/api/rooms/${params.roomId}`);
+        // In Next.js 15, params can be a Promise, but useParams() returns sync object
+        const roomId = params.roomId as string;
+        if (!roomId) {
+          setError("Room ID is required");
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch(`/api/rooms/${roomId}`);
         if (response.ok) {
           const data = await response.json();
           // Check if current user is already a participant
@@ -40,10 +48,8 @@ export default function RoomPage() {
       }
     };
 
-    if (params.roomId) {
-      fetchRoom();
-    }
-  }, [params.roomId]);
+    fetchRoom();
+  }, [params, auth, router]);
 
   if (loading) {
     return (

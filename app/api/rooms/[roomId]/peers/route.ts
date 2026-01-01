@@ -13,7 +13,7 @@ const peerStore = new Map<string, Map<string, PeerInfo>>();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { roomId: string } }
+  { params }: { params: Promise<{ roomId: string }> }
 ) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -22,7 +22,8 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const peersMap = peerStore.get(params.roomId) || new Map();
+    const { roomId } = await params;
+    const peersMap = peerStore.get(roomId) || new Map();
     const peers = Array.from(peersMap.values());
     return NextResponse.json({ peers });
   } catch (error) {
@@ -33,7 +34,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { roomId: string } }
+  { params }: { params: Promise<{ roomId: string }> }
 ) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -42,6 +43,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { roomId } = await params;
     const body = await request.json();
     const { peerId } = body;
 
@@ -49,8 +51,8 @@ export async function POST(
       return NextResponse.json({ error: "Peer ID is required" }, { status: 400 });
     }
 
-    if (!peerStore.has(params.roomId)) {
-      peerStore.set(params.roomId, new Map());
+    if (!peerStore.has(roomId)) {
+      peerStore.set(roomId, new Map());
     }
 
     const peerInfo: PeerInfo = {
@@ -60,11 +62,11 @@ export async function POST(
       userEmail: session.user.email || "",
     };
 
-    peerStore.get(params.roomId)!.set(peerId, peerInfo);
+    peerStore.get(roomId)!.set(peerId, peerInfo);
 
     // Clean up old entries periodically (simple cleanup)
     setTimeout(() => {
-      peerStore.get(params.roomId)?.delete(peerId);
+      peerStore.get(roomId)?.delete(peerId);
     }, 5 * 60 * 1000); // Remove after 5 minutes
 
     return NextResponse.json({ success: true });
@@ -76,7 +78,7 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { roomId: string } }
+  { params }: { params: Promise<{ roomId: string }> }
 ) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -85,11 +87,12 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { roomId } = await params;
     const body = await request.json();
     const { peerId } = body;
 
     if (peerId) {
-      peerStore.get(params.roomId)?.delete(peerId);
+      peerStore.get(roomId)?.delete(peerId);
     }
 
     return NextResponse.json({ success: true });
