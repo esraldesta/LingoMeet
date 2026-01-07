@@ -3,7 +3,7 @@ import { adminClient } from "better-auth/client/plugins"
 import { ac, admin, pro, user } from "@/components/auth/permissions"
 
 export const authClient = createAuthClient({
-    baseURL: "http://localhost:3000",
+    baseURL: "https://lingo-meet.vercel.app",
     plugins: [
         adminClient({
             ac,
