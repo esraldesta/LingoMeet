@@ -1,102 +1,36 @@
-# Talk - Language Practice Platform
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-A real-time language practice platform built with Next.js, WebRTC, and BetterAuth.
+## Getting Started
 
-## Features
-
-- **Real-time Video/Audio Communication**: Practice languages with other learners using WebRTC
-- **Room Management**: Create and join conversation rooms
-- **User Types**: Support for general users, teachers, and AI practice rooms
-- **Authentication**: Secure authentication with BetterAuth
-- **Subscription System**: Free first month, then subscription-based
-
-## Tech Stack
-
-- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
-- **Authentication**: BetterAuth
-- **Database**: PostgreSQL with Prisma ORM
-- **Real-time Communication**: WebRTC, PeerJS
-- **Video/Audio**: MediaStream API
-
-## Setup
-
-1. **Install Dependencies**
-
-```bash
-npm install
-```
-
-2. **Set Up Environment Variables**
-
-Create a `.env` file in the root directory:
-
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/talk_db
-BETTER_AUTH_SECRET=your-secret-key-here
-BETTER_AUTH_URL=http://localhost:3000
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-
-# PeerJS (optional - defaults to 0.peerjs.com)
-NEXT_PUBLIC_PEERJS_HOST=0.peerjs.com
-NEXT_PUBLIC_PEERJS_PORT=443
-
-# Optional: Google OAuth
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-```
-
-3. **Set Up Database with Prisma**
-
-```bash
-# Generate Prisma Client
-npm run db:generate
-
-# Push schema to database (creates tables)
-npm run db:push
-```
-
-BetterAuth will automatically create its required tables on first run.
-
-4. **Start the Development Server**
+First, run the development server:
 
 ```bash
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-PeerJS handles WebRTC signaling automatically, so no separate signaling server is needed!
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Project Structure
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-```
-talk/
-├── app/
-│   ├── api/
-│   │   ├── auth/          # BetterAuth routes
-│   │   └── rooms/         # Room API endpoints
-│   ├── auth/              # Authentication pages
-│   ├── dashboard/         # User dashboard
-│   ├── room/              # Video room pages
-│   └── layout.tsx
-├── components/
-│   ├── providers/         # React providers
-│   └── video-room.tsx     # WebRTC video component
-├── lib/
-│   ├── auth.ts           # BetterAuth configuration
-│   └── db.ts             # Prisma client
-└── prisma/
-    └── schema.prisma     # Prisma schema
-```
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Features in Development
+## Learn More
 
-- [ ] Teacher dashboard with student management
-- [ ] Progress tracking for students
-- [ ] AI-powered conversation practice
-- [ ] Text chat in rooms
-- [ ] Room scheduling
-- [ ] Subscription payment integration
-- [ ] Advanced moderation features
+To learn more about Next.js, take a look at the following resources:
 
-## License
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-MIT
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

@@ -1,132 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified Boolean   @default(false) @map("email_verified")
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
   image         String?
-  role          String    @default("user") @map("role") // user, admin, professional
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-
-  accounts      Account[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  role          String?
+  banned        Boolean?  @default(false)
+  banReason     String?
+  banExpires    DateTime?
   sessions      Session[]
-  verification  Verification[]
+  accounts      Account[]
   professional  Professional?
 
+  @@unique([email])
   @@map("user")
 }
 
-model Account {
-  id                String  @id @default(cuid())
-  userId            String  @map("user_id")
-  accountId         String  @map("account_id")
-  providerId        String  @map("provider_id")
-  accessToken       String? @map("access_token") @db.Text
-  refreshToken      String? @map("refresh_token") @db.Text
-  idToken           String? @map("id_token") @db.Text
-  accessTokenExpiresAt DateTime? @map("access_token_expires_at")
-  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
-  scope             String?
-  password          String?
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([providerId, accountId])
-  @@map("account")
-}
-
 model Session {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  expiresAt DateTime @map("expires_at")
-  token     String   @unique
-  ipAddress String?  @map("ip_address")
-  userAgent String?  @map("user_agent")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id             String   @id
+  expiresAt      DateTime
+  token          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  @@unique([token])
+  @@index([userId])
   @@map("session")
 }
 
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
 model Verification {
-  id         String   @id @default(cuid())
+  id         String   @id
   identifier String
   value      String
-  expiresAt  DateTime @map("expires_at")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     String?  @map("user_id")
-
-  @@unique([identifier, value])
+  @@index([identifier])
   @@map("verification")
 }
 
-// User profiles table (extends BetterAuth User)
-model UserProfile {
-  id                   String    @id @default(uuid()) @db.Uuid
-  userId               String    @unique
-  displayName          String?    @map("display_name")
-  bio                 String?
-  avatarUrl           String?    @map("avatar_url")
-  preferredLanguages  String[]   @default([]) @map("preferred_languages")
-  learningLanguages   String[]   @default([]) @map("learning_languages")
-  userType            String     @default("general") @map("user_type")
-  subscriptionStatus  String     @default("free") @map("subscription_status")
-  subscriptionStartDate DateTime? @map("subscription_start_date")
-  subscriptionEndDate   DateTime? @map("subscription_end_date")
-  createdAt           DateTime   @default(now()) @map("created_at")
-  updatedAt           DateTime   @updatedAt @map("updated_at")
+model RateLimit {
+  id          String  @id
+  key         String?
+  count       Int?
+  lastRequest BigInt?
 
-  @@map("user_profiles")
+  @@map("rateLimit")
 }
 
 model Room {
-  id                String    @id @default(uuid()) @db.Uuid
+  id                String    @id @default(uuid()) 
   name              String
   description       String?
-  roomType         String     @default("general") @map("room_type")
-  language         String
-  topic            String?
-  isPublic         Boolean    @default(true) @map("is_public")
-  maxParticipants  Int        @default(10) @map("max_participants")
-  createdBy        String     @map("created_by")
-  teacherId        String?     @map("teacher_id")
-  status           String     @default("active")
-  scheduledStartTime DateTime? @map("scheduled_start_time")
-  createdAt        DateTime   @default(now()) @map("created_at")
-  updatedAt        DateTime   @updatedAt @map("updated_at")
+  roomType          String     @default("general")
+  language          String
+  topic             String?
+  isPublic          Boolean    @default(true) 
+  maxParticipants   Int        @default(10) 
+  createdBy         String     
+  teacherId         String?     
+  status            String     @default("active")
+  scheduledStartTime DateTime? 
+  createdAt         DateTime   @default(now()) 
+  updatedAt         DateTime   @updatedAt 
 
-  participants     RoomParticipant[]
-  messages         RoomMessage[]
-  studentProgress  StudentProgress[]
+  participants      RoomParticipant[]
+  // messages          RoomMessage[]
+  // studentProgress   StudentProgress[]
 
   @@index([createdBy])
   @@index([teacherId])
   @@index([status])
   @@map("rooms")
+
 }
 
 model RoomParticipant {
-  id        String    @id @default(uuid()) @db.Uuid
-  roomId    String    @map("room_id") @db.Uuid
-  userId    String    @map("user_id")
-  joinedAt  DateTime  @default(now()) @map("joined_at")
-  leftAt    DateTime? @map("left_at")
+  id        String    @id @default(uuid()) 
+  roomId    String    
+  userId    String    
+  joinedAt  DateTime  @default(now()) 
+  leftAt    DateTime? 
   role      String    @default("participant")
 
   room      Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
@@ -136,67 +133,25 @@ model RoomParticipant {
   @@map("room_participants")
 }
 
-model RoomMessage {
-  id        String    @id @default(uuid()) @db.Uuid
-  roomId    String    @map("room_id") @db.Uuid
-  userId    String    @map("user_id")
-  message   String
-  createdAt DateTime  @default(now()) @map("created_at")
-
-  room      Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
-
-  @@index([roomId])
-  @@map("room_messages")
-}
-
-model StudentTeacherRelationship {
-  id        String    @id @default(uuid()) @db.Uuid
-  teacherId String    @map("teacher_id")
-  studentId String    @map("student_id")
-  createdAt DateTime  @default(now()) @map("created_at")
-
-  @@unique([teacherId, studentId])
-  @@index([teacherId])
-  @@index([studentId])
-  @@map("student_teacher_relationships")
-}
-
-model StudentProgress {
-  id           String    @id @default(uuid()) @db.Uuid
-  studentId    String    @map("student_id")
-  teacherId    String    @map("teacher_id")
-  roomId       String?   @map("room_id") @db.Uuid
-  activityType String    @map("activity_type")
-  score        Int?
-  feedback     String?
-  createdAt    DateTime  @default(now()) @map("created_at")
-
-  room         Room?     @relation(fields: [roomId], references: [id], onDelete: SetNull)
-
-  @@index([studentId])
-  @@index([teacherId])
-  @@map("student_progress")
-}
-
 model Professional {
-  id                String    @id @default(uuid()) @db.Uuid
-  userId            String    @unique @map("user_id")
-  displayName       String    @map("display_name")
+  id                String    @id @default(uuid()) 
+  userId            String    @unique 
+  displayName       String    
   bio               String?
-  avatarUrl         String?   @map("avatar_url")
-  languages         String[]  @map("languages")
-  certifications    String[]  @map("certifications")
-  experience        String?   @map("experience")
-  accent            String?   @map("accent")
-  level             String    @map("level") // beginner, intermediate, advanced
-  pricePerMinute    Float     @map("price_per_minute")
-  isVerified        Boolean   @default(false) @map("is_verified")
-  verificationDate  DateTime? @map("verification_date")
+  avatarUrl         String?   
+  languages         String[]  
+  certifications    String[]  
+  experience        String?   
+  accent            String?   
+  level             String    
+  pricePerMinute    Float     
+  isVerified        Boolean   @default(false) 
+  verificationDate  DateTime? 
   rating            Float?    @default(0)
-  reviewCount       Int       @default(0) @map("review_count")
-  totalSessions     Int       @default(0) @map("total_sessions")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
+  reviewCount       Int       @default(0) 
+  totalSessions     Int       @default(0) 
+  createdAt         DateTime  @default(now()) 
+  updatedAt         DateTime  @updatedAt 
 
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   sessions          ProfessionalSession[]
@@ -211,37 +166,36 @@ model Professional {
 }
 
 model ProfessionalAvailability {
-  id            String    @id @default(uuid()) @db.Uuid
-  professionalId String    @map("professional_id") @db.Uuid
-  dayOfWeek     Int       @map("day_of_week") // 0-6 (Sunday-Saturday)
-  startTime     String    @map("start_time") // HH:MM format
-  endTime       String    @map("end_time") // HH:MM format
-  isAvailable   Boolean   @default(true) @map("is_available")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id            String    @id @default(uuid()) 
+  professionalId String    
+  dayOfWeek     Int       
+  startTime     String    
+  endTime       String    
+  isAvailable   Boolean   @default(true) 
+  createdAt     DateTime  @default(now()) 
+  updatedAt     DateTime  @updatedAt
 
   professional  Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
 
   @@unique([professionalId, dayOfWeek, startTime])
-  @@map("professional_availability")
 }
 
 model ProfessionalSession {
-  id             String    @id @default(uuid()) @db.Uuid
-  professionalId String    @map("professional_id") @db.Uuid
+  id             String    @id @default(uuid()) 
+  professionalId String    
   title          String?
   description    String?
   language       String
-  maxParticipants Int      @default(1) @map("max_participants")
-  pricePerMinute Float     @map("price_per_minute")
-  status         String    @default("scheduled") // scheduled, ongoing, completed, cancelled
-  scheduledStart DateTime  @map("scheduled_start")
-  scheduledEnd   DateTime  @map("scheduled_end")
-  actualStart    DateTime? @map("actual_start")
-  actualEnd      DateTime? @map("actual_end")
-  meetingUrl     String?   @map("meeting_url")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  maxParticipants Int      @default(1) 
+  pricePerMinute Float     
+  status         String    @default("scheduled") 
+  scheduledStart DateTime  
+  scheduledEnd   DateTime  
+  actualStart    DateTime? 
+  actualEnd      DateTime? 
+  meetingUrl     String?   
+  createdAt      DateTime  @default(now()) 
+  updatedAt      DateTime  @updatedAt
 
   professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
   booking        Booking?
@@ -254,23 +208,23 @@ model ProfessionalSession {
 }
 
 model Booking {
-  id             String    @id @default(uuid()) @db.Uuid
-  professionalId String    @map("professional_id") @db.Uuid
-  sessionId      String    @map("session_id") @unique @db.Uuid
-  learnerId      String    @map("learner_id")
-  status         String    @default("pending") // pending, confirmed, cancelled, completed
-  totalPrice     Float     @map("total_price")
-  platformFee    Float     @map("platform_fee") // 20-30% commission
-  professionalEarnings Float @map("professional_earnings")
-  paymentStatus  String    @default("pending") @map("payment_status") // pending, paid, refunded
-  paymentId      String?   @map("payment_id")
-  bookedAt       DateTime  @default(now()) @map("booked_at")
-  confirmedAt    DateTime? @map("confirmed_at")
-  cancelledAt    DateTime? @map("cancelled_at")
-  completedAt    DateTime? @map("completed_at")
+  id             String    @id @default(uuid()) 
+  professionalId String    
+  sessionId      String    @unique
+  learnerId      String    
+  status         String    @default("pending") 
+  totalPrice     Float     
+  platformFee    Float     
+  professionalEarnings Float 
+  paymentStatus  String    @default("pending") 
+  paymentId      String?   
+  bookedAt       DateTime  @default(now()) 
+  confirmedAt    DateTime? 
+  cancelledAt    DateTime? 
+  completedAt    DateTime? 
   notes          String?
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  createdAt      DateTime  @default(now()) 
+  updatedAt      DateTime  @updatedAt
 
   professional   Professional         @relation(fields: [professionalId], references: [id], onDelete: Cascade)
   session        ProfessionalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -284,11 +238,11 @@ model Booking {
 }
 
 model SessionParticipant {
-  id         String    @id @default(uuid()) @db.Uuid
-  sessionId  String    @map("session_id") @db.Uuid
-  userId     String    @map("user_id")
-  joinedAt   DateTime  @default(now()) @map("joined_at")
-  leftAt     DateTime? @map("left_at")
+  id         String    @id @default(uuid()) 
+  sessionId  String    
+  userId     String    
+  joinedAt   DateTime  @default(now()) 
+  leftAt     DateTime? 
   role       String    @default("learner")
 
   session    ProfessionalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -298,15 +252,15 @@ model SessionParticipant {
 }
 
 model ProfessionalReview {
-  id            String    @id @default(uuid()) @db.Uuid
-  professionalId String    @map("professional_id") @db.Uuid
-  bookingId     String    @unique @map("booking_id") @db.Uuid
-  learnerId     String    @map("learner_id")
-  rating        Int       // 1-5 stars
+  id            String    @id @default(uuid()) 
+  professionalId String    
+  bookingId     String    @unique    
+  learnerId     String    
+  rating        Int       
   comment       String?
-  isPublic      Boolean   @default(true) @map("is_public")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  isPublic      Boolean   @default(true) 
+  createdAt     DateTime  @default(now()) 
+  updatedAt     DateTime  @updatedAt
 
   professional  Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
   booking       Booking?    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
