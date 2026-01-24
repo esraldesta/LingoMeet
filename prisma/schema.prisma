@@ -27,7 +27,11 @@ model User {
   banExpires    DateTime?
   sessions      Session[]
   accounts      Account[]
+  
   professional  Professional?
+  
+  bookings      Booking[]      @relation("LearnerBookings")
+  reviewsWritten Review[]      @relation("LearnerReviews")
 
   @@unique([email])
   @@map("user")
@@ -108,8 +112,8 @@ model Room {
   updatedAt         DateTime   @updatedAt 
 
   participants      RoomParticipant[]
-  // messages          RoomMessage[]
-  // studentProgress   StudentProgress[]
+  
+  booking           Booking?
 
   @@index([createdBy])
   @@index([teacherId])
@@ -133,139 +137,96 @@ model RoomParticipant {
   @@map("room_participants")
 }
 
+// --- Professional Marketplace Models ---
+
 model Professional {
-  id                String    @id @default(uuid()) 
-  userId            String    @unique 
-  displayName       String    
-  bio               String?
-  avatarUrl         String?   
-  languages         String[]  
-  certifications    String[]  
-  experience        String?   
-  accent            String?   
-  level             String    
-  pricePerMinute    Float     
-  isVerified        Boolean   @default(false) 
-  verificationDate  DateTime? 
-  rating            Float?    @default(0)
-  reviewCount       Int       @default(0) 
-  totalSessions     Int       @default(0) 
-  createdAt         DateTime  @default(now()) 
-  updatedAt         DateTime  @updatedAt 
-
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sessions          ProfessionalSession[]
-  bookings          Booking[]
-  reviews           ProfessionalReview[]
-  availability      ProfessionalAvailability[]
-
-  @@index([isVerified])
-  @@index([rating])
-  @@index([languages])
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  bio           String?
+  headline      String?
+  languages     Json?     // e.g. [{"language": "Spanish", "level": "Native"}, {"language": "English", "level": "C1"}]
+  pricePerMinute Decimal  @default(0.0)
+  currency      String    @default("USD")
+  
+  isVerified    Boolean   @default(false)
+  
+  rating        Float     @default(0.0)
+  reviewCount   Int       @default(0)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  availabilities Availability[]
+  bookings       Booking[]
+  reviews        Review[]
+  
   @@map("professionals")
 }
 
-model ProfessionalAvailability {
-  id            String    @id @default(uuid()) 
-  professionalId String    
-  dayOfWeek     Int       
-  startTime     String    
-  endTime       String    
-  isAvailable   Boolean   @default(true) 
-  createdAt     DateTime  @default(now()) 
-  updatedAt     DateTime  @updatedAt
-
-  professional  Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
-
-  @@unique([professionalId, dayOfWeek, startTime])
-}
-
-model ProfessionalSession {
-  id             String    @id @default(uuid()) 
-  professionalId String    
-  title          String?
-  description    String?
-  language       String
-  maxParticipants Int      @default(1) 
-  pricePerMinute Float     
-  status         String    @default("scheduled") 
-  scheduledStart DateTime  
-  scheduledEnd   DateTime  
-  actualStart    DateTime? 
-  actualEnd      DateTime? 
-  meetingUrl     String?   
-  createdAt      DateTime  @default(now()) 
-  updatedAt      DateTime  @updatedAt
-
+model Availability {
+  id             String       @id @default(uuid())
+  professionalId String
   professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
-  booking        Booking?
-  participants   SessionParticipant[]
-
-  @@index([professionalId])
-  @@index([status])
-  @@index([scheduledStart])
-  @@map("professional_sessions")
+  
+  dayOfWeek      Int          // 0 = Sunday, 1 = Monday, etc.
+  startTime      String       // "09:00" (24h format)
+  endTime        String       // "17:00"
+  
+  // For specific dates overrides (optional for now, but good to have)
+  specificDate   DateTime?
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  
+  @@map("availabilities")
 }
 
 model Booking {
-  id             String    @id @default(uuid()) 
-  professionalId String    
-  sessionId      String    @unique
-  learnerId      String    
-  status         String    @default("pending") 
-  totalPrice     Float     
-  platformFee    Float     
-  professionalEarnings Float 
-  paymentStatus  String    @default("pending") 
-  paymentId      String?   
-  bookedAt       DateTime  @default(now()) 
-  confirmedAt    DateTime? 
-  cancelledAt    DateTime? 
-  completedAt    DateTime? 
-  notes          String?
-  createdAt      DateTime  @default(now()) 
-  updatedAt      DateTime  @updatedAt
+  id             String       @id @default(uuid())
+  learnerId      String
+  learner        User         @relation("LearnerBookings", fields: [learnerId], references: [id])
+  
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id])
+  
+  roomId         String?      @unique
+  room           Room?        @relation(fields: [roomId], references: [id])
+  
+  startTime      DateTime
+  endTime        DateTime
+  durationMinutes Int
+  
+  totalPrice     Decimal
+  currency       String       @default("USD")
+  
+  status         String       @default("pending") // pending, confirmed, completed, canceled
+  paymentStatus  String       @default("unpaid")  // unpaid, paid, refunded
+  
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  
+  review         Review?
 
-  professional   Professional         @relation(fields: [professionalId], references: [id], onDelete: Cascade)
-  session        ProfessionalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  review         ProfessionalReview?
-
-  @@index([professionalId])
-  @@index([learnerId])
-  @@index([status])
-  @@index([paymentStatus])
   @@map("bookings")
 }
 
-model SessionParticipant {
-  id         String    @id @default(uuid()) 
-  sessionId  String    
-  userId     String    
-  joinedAt   DateTime  @default(now()) 
-  leftAt     DateTime? 
-  role       String    @default("learner")
-
-  session    ProfessionalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@unique([sessionId, userId])
-  @@map("session_participants")
-}
-
-model ProfessionalReview {
-  id            String    @id @default(uuid()) 
-  professionalId String    
-  bookingId     String    @unique    
-  learnerId     String    
-  rating        Int       
-  comment       String?
-  isPublic      Boolean   @default(true) 
-  createdAt     DateTime  @default(now()) 
-  updatedAt     DateTime  @updatedAt
-
-  professional  Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
-  booking       Booking?    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-
-  @@index([professionalId])
-  @@index([rating])
-  @@map("professional_reviews")
+model Review {
+  id             String       @id @default(uuid())
+  bookingId      String       @unique
+  booking        Booking      @relation(fields: [bookingId], references: [id])
+  
+  learnerId      String
+  learner        User         @relation("LearnerReviews", fields: [learnerId], references: [id])
+  
+  professionalId String
+  professional   Professional @relation(fields: [professionalId], references: [id])
+  
+  rating         Int          // 1-5
+  comment        String?
+  
+  createdAt      DateTime     @default(now())
+  
+  @@map("reviews")
 }

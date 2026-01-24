@@ -37,6 +37,26 @@ export async function GET(
       (p) => p.userId === session.user.id
     );
 
+    // Scheduled Session Checks
+    if (room.scheduledStartTime) {
+        const now = new Date();
+        const startTime = new Date(room.scheduledStartTime);
+        const timeDiff = startTime.getTime() - now.getTime();
+        
+        // Allow joining 10 minutes before
+        if (timeDiff > 10 * 60 * 1000) {
+             return NextResponse.json({ error: "Session has not started yet. Please join 10 minutes before the scheduled time." }, { status: 403 });
+        }
+        
+        // Check authorization for private/scheduled rooms
+        if (room.roomType === 'private' || room.teacherId) {
+             const isAuthorized = room.createdBy === session.user.id || room.teacherId === session.user.id;
+             if (!isAuthorized) {
+                 return NextResponse.json({ error: "You are not authorized to join this session." }, { status: 403 });
+             }
+        }
+    }
+
     return NextResponse.json({
       ...room,
       participantCount,

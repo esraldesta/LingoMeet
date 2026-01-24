@@ -37,6 +37,10 @@ export async function POST(
       return NextResponse.json({ error: "Room not found" }, { status: 404 });
     }
 
+    if (room.status === 'completed' || room.status === 'canceled') {
+        return NextResponse.json({ error: "Session has ended" }, { status: 403 });
+    }
+
     // Check if user is already a participant
     const existingParticipant = await prisma.roomParticipant.findFirst({
       where: {

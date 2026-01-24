@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { VideoRoom } from "@/components/video-room";
 import { authClient } from "@/lib/auth-client";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 export default function RoomPage() {
   const params = useParams();
@@ -69,6 +70,33 @@ export default function RoomPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <div className="text-center">
           <div className="text-white text-xl mb-4">{error || "Room not found"}</div>
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if room is completed or canceled
+  if (room.status === 'completed' || room.status === 'canceled') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+            <div className="flex justify-center mb-4">
+                {room.status === 'completed' ? (
+                    <CheckCircle2 className="w-16 h-16 text-green-500" />
+                ) : (
+                    <XCircle className="w-16 h-16 text-red-500" />
+                )}
+            </div>
+          <div className="text-white text-2xl font-semibold mb-2 capitalize">Session {room.status}</div>
+          <div className="text-gray-400 mb-6">
+            This session has ended and is no longer accessible.
+          </div>
           <button
             onClick={() => router.push("/dashboard")}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

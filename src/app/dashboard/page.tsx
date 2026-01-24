@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Users, Video, LogOut, GraduationCap, Calendar, Star, Shield, Loader } from "lucide-react";
+import { Users, Video, LogOut, GraduationCap, Calendar, Star, Shield, Loader, ArrowRight } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { ModeToggle } from "@/components/theme-toggle";
 import CreateRoomDialog from "@/components/CreateRoomDialog";
+import { getUserBookings } from "@/app/actions/booking";
+import Header from "@/components/Header";
+
 
 interface Room {
   id: string;
@@ -23,9 +26,26 @@ interface Room {
   isFull?: boolean;
 }
 
+interface Booking {
+  id: string;
+  startTime: Date;
+  endTime: Date;
+  status: string;
+  professional: {
+    user: {
+      name: string;
+      image: string | null;
+    }
+  };
+  room: {
+    id: string;
+  } | null;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
   const {
@@ -44,15 +64,31 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error("Failed to fetch rooms:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
+  const fetchBookings = async () => {
+      try {
+          const data = await getUserBookings();
+          setBookings(data as any); // Casting for simplicity
+      } catch (error) {
+          console.error("Failed to fetch bookings:", error);
+      }
+  };
 
   useEffect(() => {
-    fetchRooms();
-  }, [session]);
+    const init = async () => {
+        setLoading(true);
+        await Promise.all([fetchRooms(), fetchBookings()]);
+        setLoading(false);
+    };
+    if (session) {
+        init();
+    } else if (!isPending) {
+         // Maybe redirect?
+         setLoading(false);
+    }
+  }, [session, isPending]);
 
 
   const handleSignOut = async () => {
@@ -68,42 +104,23 @@ export default function DashboardPage() {
     )
   }
 
+  // Filter for actual upcoming sessions only for the sidebar
+  const now = new Date();
+  const upcomingBookings = bookings.filter(b => {
+      const endDate = new Date(b.endTime);
+      return endDate > now && b.status !== 'completed' && b.status !== 'canceled';
+  }).slice(0, 3); // Show max 3
+
 
   return (
     <div className="min-h-screen">
-      <nav className="bg-secondary shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Talk</h1>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/admin"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg"
-            >
-              <Shield className="w-4 h-4" />
-              Admin
-            </Link>
-            <span>
-              {session?.user?.name || session?.user?.email}
-            </span>
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </button>
-            <ModeToggle />
-          </div>
-        </div>
-      </nav>
+      <Header />
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-4 gap-8">
           <div className="lg:col-span-3">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-3xl font-bold">Your Rooms</h2>
-
-
               <CreateRoomDialog
                 onSuccess={() => {
                   fetchRooms();
@@ -147,7 +164,6 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex gap-2">
                           {room.participantCount !== undefined && room.participantCount >= room.maxParticipants ? (
-                          // {true ? (
                             <button
                               disabled
                               className="flex-1 text-center px-4 py-2 bg-accent text-accent-foreground/60 rounded-lg cursor-not-allowed"
@@ -177,13 +193,13 @@ export default function DashboardPage() {
             }
           </div>
 
-          <div className="lg:col-span-1">
-            <div className="bg-secondary rounded-lg shadow-md p-6 mb-6">
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-secondary rounded-lg shadow-md p-6">
               <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                 <GraduationCap className="w-5 h-5" />
                 Professional Sessions
               </h3>
-              <p className="text-muted-foreground b-4 my-2">
+              <p className="text-muted-foreground b-4 my-2 text-sm">
                 Get personalized guidance from verified language professionals
               </p>
               <div className="space-y-3">
@@ -193,24 +209,8 @@ export default function DashboardPage() {
                 >
                   Browse Professionals
                 </Link>
-                <Link
-                  href="/book-session"
-                  className="block w-full px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors text-center"
-                >
-                  Book Session
-                </Link>
-                <Link
-                  href="/professional-signup"
-                  className="block w-full px-4 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-50 dark:hover:bg-green-900 transition-colors text-center"
-                >
-                  Become a Professional
-                </Link>
-                <Link
-                  href="/professional-dashboard"
-                  className="block w-full px-4 py-2 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900 transition-colors text-center"
-                >
-                  Professional Dashboard
-                </Link>
+
+
               </div>
             </div>
 
@@ -219,24 +219,56 @@ export default function DashboardPage() {
                 <Calendar className="w-5 h-5" />
                 Upcoming Sessions
               </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
-                No upcoming professional sessions booked
-              </p>
-              <Link
-                href="/professionals"
-                className="text-blue-600 hover:underline text-sm"
-              >
-                Find a professional →
-              </Link>
+              
+              {upcomingBookings.length > 0 ? (
+                  <div className="space-y-4">
+                      {upcomingBookings.map(booking => (
+                          <div key={booking.id} className="bg-card p-3 rounded border">
+                              <div className="font-semibold text-sm mb-1">
+                                  {new Date(booking.startTime).toLocaleDateString()} @ {new Date(booking.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                              </div>
+                              <div className="text-xs text-muted-foreground mb-2">
+                                  with {booking.professional.user.name}
+                              </div>
+                              {booking.room && (
+                                  <Link 
+                                    href={`/room/${booking.room.id}`}
+                                    className="text-xs flex items-center gap-1 text-primary hover:underline"
+                                  >
+                                      Join Session <ArrowRight className="w-3 h-3" />
+                                  </Link>
+                              )}
+                          </div>
+                      ))}
+                      
+                      {upcomingBookings.length < bookings.filter(b => {
+                           const endDate = new Date(b.endTime);
+                           return endDate > now && b.status !== 'completed' && b.status !== 'canceled';
+                      }).length && (
+                          <div className="text-center pt-2">
+                              <Link href="/dashboard/sessions" className="text-xs text-blue-500 hover:underline">
+                                  View all upcoming
+                              </Link>
+                          </div>
+                      )}
+                  </div>
+              ) : (
+                <div className="text-center">
+                    <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">
+                        No upcoming professional sessions booked
+                    </p>
+                    <Link
+                        href="/professionals"
+                        className="text-blue-600 hover:underline text-sm"
+                    >
+                        Find a professional →
+                    </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
-
-
       </div>
-
-
-
     </div>
   );
 }

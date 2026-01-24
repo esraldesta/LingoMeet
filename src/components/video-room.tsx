@@ -12,6 +12,8 @@ interface VideoRoomProps {
     language: string;
     participants?: any[];
   };
+  onLeave?: () => void; // Optional custom leave handler
+  customControls?: React.ReactNode; // Optional custom controls
 }
 
 interface PeerInfo {
@@ -21,7 +23,7 @@ interface PeerInfo {
   userEmail: string;
 }
 
-export function VideoRoom({ room }: VideoRoomProps) {
+export function VideoRoom({ room, onLeave, customControls }: VideoRoomProps) {
   const router = useRouter();
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
@@ -38,6 +40,7 @@ export function VideoRoom({ room }: VideoRoomProps) {
   const streamRef = useRef<MediaStream | null>(null);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastKnownPeerIdsRef = useRef<Set<string>>(new Set());
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     initializeRoom();
@@ -85,10 +88,8 @@ export function VideoRoom({ room }: VideoRoomProps) {
         // Register this peer in the room
         await registerPeerInRoom(id);
         
-        // Small delay to ensure peer is registered before discovery starts
-        setTimeout(() => {
-          startPeerDiscovery(id);
-        }, 500);
+        // Start SSE connection for real-time updates
+        startEventStream(id);
       });
 
       // Handle incoming calls
@@ -186,127 +187,133 @@ export function VideoRoom({ room }: VideoRoomProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ peerId }),
       });
+
+      // Notify SSE about the join
+      await fetch(`/api/rooms/${room.id}/events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "join", peerId }),
+      });
     } catch (error) {
       console.error("Error registering peer:", error);
     }
   };
 
-  const startPeerDiscovery = (myPeerId: string) => {
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
+  const startEventStream = (myPeerId: string) => {
+    // Close existing connection if any
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
     }
 
-    // Initial fetch to connect to existing peers immediately
-    fetchAndConnectToParticipants(myPeerId);
+    const eventSource = new EventSource(`/api/rooms/${room.id}/events`);
+    eventSourceRef.current = eventSource;
 
-    // Then poll periodically for new peers
-    pollIntervalRef.current = setInterval(async () => {
+    eventSource.onmessage = (event) => {
       try {
-        const response = await fetch(`/api/rooms/${room.id}/peers`);
-        if (response.ok) {
-          const data = await response.json() as { peers: PeerInfo[] };
-          const { peers } = data;
-          
-          // Quick check: compare peer IDs to see if anything changed
-          const currentPeerIds = new Set<string>(peers.map((p: PeerInfo) => p.peerId));
-          const lastKnownIds = lastKnownPeerIdsRef.current;
-          
-          // Check if peer list changed (added or removed)
-          const peerIdsChanged = 
-            currentPeerIds.size !== lastKnownIds.size ||
-            Array.from(currentPeerIds).some(id => !lastKnownIds.has(id)) ||
-            Array.from(lastKnownIds).some(id => !currentPeerIds.has(id));
-          
-          // Only update if there are actual changes
-          if (peerIdsChanged) {
-            lastKnownPeerIdsRef.current = currentPeerIds;
+        const data = JSON.parse(event.data);
+        
+        switch (data.type) {
+          case "peers":
+            // Initial peers list
+            handlePeersUpdate(data.peers, myPeerId);
+            break;
             
-            // Update peer info map only if there are changes
-            setPeerInfoMap(prev => {
-              const newPeerInfoMap = new Map<string, PeerInfo>();
-              let hasInfoChanges = false;
-              
-              peers.forEach((peer: PeerInfo) => {
-                newPeerInfoMap.set(peer.peerId, peer);
-                // Check if info changed for existing peers
-                const existingPeer = prev.get(peer.peerId);
-                if (existingPeer && existingPeer.userName !== peer.userName) {
-                  hasInfoChanges = true;
-                }
-              });
-              
-              // If peer list changed or info changed, return new map
-              return (peerIdsChanged || hasInfoChanges) ? newPeerInfoMap : prev;
-            });
+          case "peer-joined":
+            console.log("Peer joined via SSE:", data.peer);
+            handlePeerJoined(data.peer, myPeerId);
+            break;
             
-            // Only connect to peers we haven't connected to yet
-            const otherPeers = peers
-              .filter((peer: PeerInfo) => peer.peerId !== myPeerId && !connectionsRef.current.has(peer.peerId))
-              .map((peer: PeerInfo) => peer.peerId);
+          case "peer-left":
+            console.log("Peer left via SSE:", data.peerId);
+            handlePeerLeft(data.peerId);
+            break;
             
-            // Only log and connect if there are actually new peers
-            if (otherPeers.length > 0) {
-              console.log("Found new peers to connect:", otherPeers);
-              
-              // Connect to new peers (only if we're the "caller" - prevent bidirectional calls)
-              // Use peerId comparison to determine who calls (lower ID calls higher ID)
-              otherPeers.forEach((peerId: string) => {
-                if (myPeerId < peerId) {
-                  // We call peers with higher IDs
-                  connectToPeer(peerId);
-                }
-                // Otherwise, we wait for them to call us
-              });
-            }
-          }
+          case "ping":
+            // Keep-alive, ignore
+            break;
+            
+          default:
+            console.log("Unknown SSE message:", data);
         }
       } catch (error) {
-        console.error("Error polling for peers:", error);
+        console.error("Error parsing SSE message:", error);
       }
-    }, 2000); // Poll every 2 seconds
+    };
+
+    eventSource.onerror = (error) => {
+      console.error("SSE error:", error);
+      // Attempt to reconnect after 5 seconds
+      setTimeout(() => {
+        if (eventSourceRef.current === eventSource) {
+          startEventStream(myPeerId);
+        }
+      }, 5000);
+    };
   };
 
-  const fetchAndConnectToParticipants = async (myPeerId: string) => {
-    try {
-      const response = await fetch(`/api/rooms/${room.id}/peers`);
-      if (response.ok) {
-        const data = await response.json() as { peers: PeerInfo[] };
-        const { peers } = data;
-        
-        // Update tracked peer IDs
-        const currentPeerIds = new Set<string>(peers.map((p: PeerInfo) => p.peerId));
-        lastKnownPeerIdsRef.current = currentPeerIds;
-        
-        // Update peer info map (only once on initial fetch)
-        const newPeerInfoMap = new Map<string, PeerInfo>();
-        peers.forEach((peer: PeerInfo) => {
-          newPeerInfoMap.set(peer.peerId, peer);
-        });
-        setPeerInfoMap(newPeerInfoMap);
-        
-        // Only connect to peers we haven't connected to yet
-        // Use peerId comparison to prevent bidirectional calls
-        const otherPeers = peers
-          .filter((peer: PeerInfo) => peer.peerId !== myPeerId && !connectionsRef.current.has(peer.peerId))
-          .map((peer: PeerInfo) => peer.peerId);
-        
-        if (otherPeers.length > 0) {
-          console.log("Connecting to existing peers:", otherPeers);
-          
-          // Connect to each existing peer (only if we should be the caller)
-          otherPeers.forEach((peerId: string) => {
-            if (myPeerId < peerId) {
-              // We call peers with higher IDs
-              connectToPeer(peerId);
-            }
-            // Otherwise, we wait for them to call us
-          });
+  const handlePeersUpdate = (peers: PeerInfo[], myPeerId: string) => {
+    // Update peer info map
+    const newPeerInfoMap = new Map<string, PeerInfo>();
+    peers.forEach((peer: PeerInfo) => {
+      newPeerInfoMap.set(peer.peerId, peer);
+    });
+    setPeerInfoMap(newPeerInfoMap);
+    
+    // Connect to new peers we haven't connected to yet
+    const otherPeers = peers
+      .filter((peer: PeerInfo) => peer.peerId !== myPeerId && !connectionsRef.current.has(peer.peerId))
+      .map((peer: PeerInfo) => peer.peerId);
+    
+    if (otherPeers.length > 0) {
+      console.log("Connecting to peers from initial list:", otherPeers);
+      
+      otherPeers.forEach((peerId: string) => {
+        if (myPeerId < peerId) {
+          // We call peers with higher IDs
+          connectToPeer(peerId);
         }
-      }
-    } catch (error) {
-      console.error("Error fetching participants:", error);
+      });
     }
   };
+
+  const handlePeerJoined = (peer: PeerInfo, myPeerId: string) => {
+    // Update peer info map
+    setPeerInfoMap(prev => {
+      const newMap = new Map(prev);
+      newMap.set(peer.peerId, peer);
+      return newMap;
+    });
+    
+    // Connect to new peer if we should be the caller
+    if (peer.peerId !== myPeerId && !connectionsRef.current.has(peer.peerId)) {
+      if (myPeerId < peer.peerId) {
+        // We call peers with higher IDs
+        connectToPeer(peer.peerId);
+      }
+    }
+  };
+
+  const handlePeerLeft = (peerId: string) => {
+    // Remove from peer info map
+    setPeerInfoMap(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(peerId);
+      return newMap;
+    });
+    
+    // Clean up connection
+    const connection = connectionsRef.current.get(peerId);
+    if (connection) {
+      connection.close();
+      connectionsRef.current.delete(peerId);
+    }
+    
+    // Remove from remote streams and participants
+    remoteStreams.delete(peerId);
+    setRemoteStreams(new Map(remoteStreams));
+    setParticipants((prev) => prev.filter((id) => id !== peerId));
+  };
+
 
   const connectToPeer = (peerId: string) => {
     if (!peerRef.current || !streamRef.current) {
@@ -403,6 +410,13 @@ export function VideoRoom({ room }: VideoRoomProps) {
   const leaveRoom = async () => {
     if (myPeerId) {
       try {
+        // Notify SSE about the leave
+        await fetch(`/api/rooms/${room.id}/events`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type: "leave", peerId: myPeerId }),
+        });
+        
         // Remove peer from room
         await fetch(`/api/rooms/${room.id}/peers`, {
           method: "DELETE",
@@ -421,14 +435,19 @@ export function VideoRoom({ room }: VideoRoomProps) {
       }
     }
     cleanup();
-    router.push("/dashboard");
+    
+    if (onLeave) {
+        onLeave();
+    } else {
+        router.push("/dashboard");
+    }
   };
 
   const cleanup = () => {
-    // Stop polling
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
+    // Close SSE connection
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
     }
 
     // Stop local stream
@@ -545,6 +564,12 @@ export function VideoRoom({ room }: VideoRoomProps) {
           >
             <Phone className="w-6 h-6 rotate-135" />
           </button>
+          
+          {customControls && (
+             <div className="border-l border-gray-600 pl-4 ml-2">
+                 {customControls}
+             </div>
+          )}
         </div>
       </div>
     </div>
