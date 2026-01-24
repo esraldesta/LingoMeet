@@ -159,7 +159,7 @@ export default function LandingPage() {
         <section className="py-20 bg-primary text-primary-foreground">
           <div className="container mx-auto px-4 text-center">
             <Button size="lg" variant="secondary" className="h-12 px-8 text-lg text-primary" asChild>
-              <Link href="/auth/signup">
+              <Link href="/auth/pro-signup">
               Are you a teacher? Join us! <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
             </Button>
