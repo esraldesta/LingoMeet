@@ -94,7 +94,7 @@ export default async function ProfessionalsPage(props: {
               <div className="col-span-full text-center py-12 bg-muted/50 rounded-lg">
                 <h3 className="text-xl font-semibold mb-2">No professionals found</h3>
                 <p className="text-muted-foreground mb-4">Try adjusting your filters or search criteria.</p>
-                <Link href="/dashboard/professional">
+                <Link href="/auth/pro-signup">
                   <Button variant="outline">Are you a teacher? Join us!</Button>
                 </Link>
               </div>
