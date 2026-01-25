@@ -26,15 +26,18 @@ export default function ProHeader() {
         <div className="flex items-center gap-2 md:gap-4">
 
           <div className="flex items-center gap-6">
-            <div className="hidden md:flex items-center gap-4 text-sm font-medium">
+            <div className="flex items-center gap-4 text-sm font-medium">
               <Link href="/pro/dashboard" className="flex items-center gap-1 hover:text-white/80 transition-colors">
-                <LayoutDashboard className="w-4 h-4" /> Dashboard
+                <LayoutDashboard className="w-4 h-4" /> 
+                <span className="hidden md:inline">Dashboard</span>
               </Link>
               <Link href="/pro/sessions" className="flex items-center gap-1 hover:text-white/80 transition-colors">
-                <CalendarDays className="w-4 h-4" /> Sessions
+                <CalendarDays className="w-4 h-4" /> 
+                <span className="hidden md:inline">Sessions</span>
               </Link>
               <Link href="/pro/profile" className="flex items-center gap-1 hover:text-white/80 transition-colors">
-                <User className="w-4 h-4" /> Profile
+                <User className="w-4 h-4" /> 
+                <span className="hidden md:inline">Profile</span>
               </Link>
             </div>
 
@@ -51,7 +54,7 @@ export default function ProHeader() {
                   title="Sign Out"
                 >
                   <LogOut className="w-4 h-4" />
-                  Sign Out
+                  <span className="hidden md:inline">Sign Out</span>
                 </Button>
               </>
             )}
