@@ -6,11 +6,52 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum RoomType {
+  GENERAL
+  PRIVATE
+  AI
+}
+
+enum RoomStatus {
+  ACTIVE
+  COMPLETED
+  CANCELED
+}
+
+enum ParticipantRole {
+  PARTICIPANT
+  HOST
+}
+
+
+enum Currency {
+  USD
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
+
+enum LanguageLevel {
+  NATIVE
+  INTERMEDIATE
+  ADVANCED
 }
 
 model User {
@@ -25,13 +66,13 @@ model User {
   banned        Boolean?  @default(false)
   banReason     String?
   banExpires    DateTime?
-  sessions      Session[]
-  accounts      Account[]
-  
-  professional  Professional?
-  
-  bookings      Booking[]      @relation("LearnerBookings")
-  reviewsWritten Review[]      @relation("LearnerReviews")
+  sessions        Session[]
+  accounts        Account[]
+  roomParticipant RoomParticipant[]
+  professional    Professional?
+  bookings        Booking[]      @relation("LearnerBookings")
+  reviewsWritten  Review[]      @relation("LearnerReviews")
+  payments        Payment[]
 
   @@unique([email])
   @@map("user")
@@ -87,11 +128,12 @@ model Verification {
 }
 
 model RateLimit {
-  id          String  @id
-  key         String?
-  count       Int?
-  lastRequest BigInt?
+  id          String @id
+  key         String
+  count       Int
+  lastRequest BigInt
 
+  @@unique([key])
   @@map("rateLimit")
 }
 
@@ -99,14 +141,14 @@ model Room {
   id                String    @id @default(uuid()) 
   name              String
   description       String?
-  roomType          String     @default("general")
+  roomType          RoomType    @default(GENERAL)
   language          String
   topic             String?
   isPublic          Boolean    @default(true) 
   maxParticipants   Int        @default(10) 
   createdBy         String     
   teacherId         String?     
-  status            String     @default("active")
+  status            RoomStatus  @default(ACTIVE)
   scheduledStartTime DateTime? 
   createdAt         DateTime   @default(now()) 
   updatedAt         DateTime   @updatedAt 
@@ -128,9 +170,11 @@ model RoomParticipant {
   userId    String    
   joinedAt  DateTime  @default(now()) 
   leftAt    DateTime? 
-  role      String    @default("participant")
+  role      ParticipantRole @default(PARTICIPANT)
+  peerId    String?
 
   room      Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([roomId])
   @@index([userId])
@@ -146,9 +190,10 @@ model Professional {
   
   bio           String?
   headline      String?
-  languages     Json?     // e.g. [{"language": "Spanish", "level": "Native"}, {"language": "English", "level": "C1"}]
+  language     String  
+  level         LanguageLevel?
   pricePerMinute Decimal  @default(0.0)
-  currency      String    @default("USD")
+  currency      Currency    @default(USD)
   
   isVerified    Boolean   @default(false)
   
@@ -161,7 +206,12 @@ model Professional {
   availabilities Availability[]
   bookings       Booking[]
   reviews        Review[]
-  
+  payments       Payment[]
+
+  // Stripe Connect (Express) account linkage
+  stripeAccountId       String?
+  stripeChargesEnabled  Boolean  @default(false)
+  stripePayoutsEnabled  Boolean  @default(false)
   @@map("professionals")
 }
 
@@ -199,17 +249,65 @@ model Booking {
   durationMinutes Int
   
   totalPrice     Decimal
-  currency       String       @default("USD")
+  currency      Currency    @default(USD)
   
-  status         String       @default("pending") // pending, confirmed, completed, canceled
-  paymentStatus  String       @default("unpaid")  // unpaid, paid, refunded
+  status         BookingStatus       @default(PENDING)
+  paymentStatus  PaymentStatus       @default(UNPAID)
   
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   
   review         Review?
+  payment        Payment?
 
   @@map("bookings")
+}
+
+model Payment {
+  id                      String       @id @default(uuid())
+
+  learnerId               String
+  learner                 User         @relation(fields: [learnerId], references: [id])
+
+  professionalId          String
+  professional            Professional @relation(fields: [professionalId], references: [id])
+
+  bookingId               String?      @unique
+  booking                 Booking?     @relation(fields: [bookingId], references: [id])
+
+  // Slot details (used to lock the time before booking exists)
+  startTime               DateTime
+  endTime                 DateTime
+  durationMinutes         Int
+
+  // Monetary amounts are stored in major units for business logic
+  amount                  Decimal
+  currency                Currency    @default(USD)
+
+
+  // Payment lifecycle status:
+  // requires_payment -> processing -> succeeded | failed | canceled | refunded
+  status                  String       @default("requires_payment")
+
+  // Stripe references
+  stripePaymentIntentId   String?      @unique
+  stripeCheckoutSessionId String?      @unique
+  stripeTransferId        String?
+  applicationFeeAmount    Int?         // in smallest currency unit (e.g. cents)
+
+  // Used to make webhook handling and session creation idempotent
+  idempotencyKey          String?      @unique
+
+  metadata                Json?
+
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+
+  // :TODO check the unique logic
+  @@unique([professionalId, startTime, endTime])
+  @@index([professionalId, startTime, endTime])
+  @@index([status])
+  @@map("payments")
 }
 
 model Review {
