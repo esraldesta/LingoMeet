@@ -203,7 +203,7 @@ function SessionCard({ booking, isUpcoming }: { booking: Booking, isUpcoming: bo
             {/* Actions */}
             <div className="flex flex-col gap-2 w-full md:w-auto">
                  {isJoinable ? (
-                     <Link href={`/room/${booking.room?.id}`} className="w-full md:w-auto">
+                     <Link href={`/pro/room/${booking.room?.id}`} className="w-full md:w-auto">
                         <Button className="w-full md:w-auto animate-pulse">
                             <Video className="w-4 h-4 mr-2" /> Join Session
                         </Button>
