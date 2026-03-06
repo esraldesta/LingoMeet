@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { ProfessionalCard } from './_components/professional-card'
 import { ProfessionalsFilter, type FilterState } from './_components/professionals-filter'
 import { Button } from '@/components/ui/button'
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { getPublicProfessionals } from '../actions/professional'
 import { LanguageLevel } from '@/generated/prisma/enums'
 import { PaginationInfo, PublicProfessionals } from '@/types'
@@ -97,15 +97,16 @@ function ProfessionalsPageContent() {
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="border-b border-border bg-card flex justify-between items-center">
-        <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="border-b border-border bg-card flex justify-between items-center w-full px-2">
+        <div className="max-w-7xl px-4 py-2">
           <h1 className="text-3xl font-bold">Find Professionals</h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-muted-foreground">
             Browse verified professionals and book your sessions
           </p>
         </div>
         <Button asChild>
-          <Link href={"/"}>Home</Link>
+          <Link href={"/"}>
+          <ArrowLeft/> Home</Link>
         </Button>
       </div>
 
