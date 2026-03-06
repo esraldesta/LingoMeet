@@ -6,7 +6,7 @@ import { authClient } from "@/lib/auth-client";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { VideoRoom } from "../_components/video-room";
 import { RoomDetailResponse } from "@/types/room";
-import { RoomStatus } from "@/generated/prisma/enums";
+import { RoomStatus, RoomType } from "@/generated/prisma/enums";
 
 export default function RoomPage() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -57,6 +57,22 @@ export default function RoomPage() {
   }
 
   if (error || !room) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="text-center">
+          <div className="text-white text-xl mb-4">{error || "Room not found"}</div>
+          <button
+            onClick={() => router.push("/home")}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+    if (room.roomType === RoomType.PRIVATE) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <div className="text-center">

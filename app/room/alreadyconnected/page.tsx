@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface ActiveRoom {
   roomId: string;
@@ -13,8 +13,10 @@ export default function AlreadyConnectedPage() {
   const [activeRoom, setActiveRoom] = useState<ActiveRoom | null>(null);
   const [loading, setLoading] = useState(true);
   const [leaving, setLeaving] = useState(false);
+  const searchParams = useSearchParams();
   const router = useRouter();
-
+  const type = searchParams.get("type");
+  const isPro = type === "pro";
   useEffect(() => {
     const fetchActive = async () => {
       try {
@@ -22,8 +24,7 @@ export default function AlreadyConnectedPage() {
         const data = await res.json();
 
         if (data.active === null) {
-          // :TODO for pro redirect to pro pages
-          router.push("/home");
+          router.push(isPro ? "/pro/sessions" : "/home");
           return;
         }
 
@@ -45,8 +46,7 @@ export default function AlreadyConnectedPage() {
       await fetch("/api/rooms/leave-active", {
         method: "POST",
       });
-      // :TODO for pro redirect to pro pages
-      router.push("/home");
+      router.push(isPro ? "/pro/sessions" : "/home");
     } catch (err) {
       console.error("Failed to leave room", err);
       setLeaving(false);

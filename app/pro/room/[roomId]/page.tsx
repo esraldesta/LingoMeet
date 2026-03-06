@@ -3,125 +3,124 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
-import { CheckCircle2, Loader2 } from "lucide-react";
-import { completeSession } from "@/app/actions/booking";
-import { toast } from "sonner";
 import { VideoRoom } from "@/app/room/_components/video-room";
-import { RoomDetailResponse } from "@/types";
+import { RoomDetailResponse } from "@/types/room";
+import { RoomStatus } from "@/generated/prisma/enums";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 
 export default function ProRoomPage() {
-  const params = useParams();
+  const { roomId } = useParams<{ roomId: string }>();
   const router = useRouter();
   const [room, setRoom] = useState<RoomDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [completing, setCompleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const {
-    data: session,
-    isPending,
-  } = authClient.useSession();
+  const { data: session, isPending } = authClient.useSession();
 
+  /**
+   * Redirect if not authenticated
+   */
   useEffect(() => {
     if (!isPending && !session) {
-        router.push("/auth/pro-signin");
+      router.replace("/auth/pro-signin");
     }
   }, [isPending, session, router]);
 
+  /**
+   * Fetch room
+   */
   useEffect(() => {
+    if (!session || !roomId) return;
+
     const fetchRoom = async () => {
       try {
-        const roomId = params.roomId as string;
-        if (!roomId) {
-          setError("Room ID is required");
-          setLoading(false);
-          return;
+        const response = await fetch(`/api/rooms/${roomId}`);
+
+        if (!response.ok) {
+          const errorData: { error?: string } = await response.json();
+          throw new Error(errorData.error ?? "Room not found");
         }
 
-        const response = await fetch(`/api/rooms/${roomId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setRoom(data);
-        } else {
-          const errorData = await response.json();
-          setError(errorData.error || "Room not found");
-        }
+        const data: RoomDetailResponse = await response.json();
+        setRoom(data);
       } catch (err) {
-        setError("Failed to load room");
+        setError(err instanceof Error ? err.message : "Failed to load room");
       } finally {
         setLoading(false);
       }
     };
 
-    if (session) {
-        fetchRoom();
-    }
-  }, [params, session]);
+    fetchRoom();
+  }, [session, roomId]);
 
-  const handleEndSession = async () => {
-      if (!confirm("Are you sure you want to end this session? This will complete the booking.")) {
-          return;
-      }
-      
-      setCompleting(true);
-      try {
-          room && await completeSession(room.id);
-          toast.success("Session completed successfully");
-          router.push("/pro/sessions");
-      } catch (error) {
-          console.error(error);
-          toast.error("Failed to end session");
-          setCompleting(false);
-      }
-  };
-
+  /**
+   * Loading UI
+   */
   if (isPending || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl flex items-center gap-2">
-            <Loader2 className="animate-spin w-5 h-5" /> Loading room...
+        <div className="flex items-center gap-2 text-lg">
+          <Loader2 className="animate-spin w-5 h-5" />
+          Loading room...
         </div>
       </div>
     );
   }
 
+  /**
+   * Error UI
+   */
   if (error || !room) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-xl mb-4 text-destructive">{error || "Room not found"}</div>
+          <div className="text-xl mb-4">{error || "Room not found"}</div>
+
           <Button onClick={() => router.push("/pro")}>
-            Back to Home
+            Back to Dashboard
           </Button>
         </div>
       </div>
     );
   }
-  
-  // Custom leave handler
-  const handleLeave = () => {
-      if (confirm("Leaving without ending the session? You can rejoin later.")) {
-          router.push("/pro");
-      }
-  };
+
+  /**
+   * Session already completed / canceled
+   */
+  if (room.status === RoomStatus.COMPLETED || room.status === RoomStatus.CANCELED) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+
+          <div className="flex justify-center mb-4">
+            {room.status === RoomStatus.COMPLETED ? (
+              <CheckCircle2 className="w-16 h-16 text-green-500" />
+            ) : (
+              <XCircle className="w-16 h-16 text-red-500" />
+            )}
+          </div>
+
+          <div className="text-2xl font-semibold mb-2 capitalize">
+            Session {room.status}
+          </div>
+
+          <div className="text-muted-foreground mb-6">
+            This session has ended.
+          </div>
+
+          <Button onClick={() => router.push("/pro/sessions")}>
+            Back to Sessions
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <VideoRoom
-        room={room} 
-        onLeave={handleLeave}
-        customControls={
-            <Button 
-                variant="destructive" 
-                size="sm" 
-                onClick={handleEndSession} 
-                disabled={completing}
-                className="bg-red-700 hover:bg-red-800"
-            >
-                {completing ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-                End Session
-            </Button>
-        }
+      room={room}
+      isPro={session?.user.role === "pro"}
     />
   );
 }

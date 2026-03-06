@@ -43,7 +43,7 @@ export default function ProHeader(){
                   title="Sign Out"
                 >
                   <LogOut className="w-4 h-4" />
-                  Sign Out
+                  <span className="hidden md:inline">Sign Out</span>
                 </Button>
               </>
             ) : (

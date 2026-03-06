@@ -14,12 +14,13 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { BookingStatus } from "@/generated/prisma/enums";
 
 interface Booking {
   id: string;
   startTime: Date;
   endTime: Date;
-  status: string;
+  status: BookingStatus;
   professional: {
     headline: string | null;
     user: {
@@ -57,12 +58,12 @@ export default function UserSessionsPage() {
   // Upcoming includes future starts AND currently active sessions
   const upcomingSessions = bookings.filter(b => {
       const endDate = new Date(b.endTime);
-      return endDate > now && b.status !== 'completed' && b.status !== 'canceled';
+      return endDate > now && b.status !== BookingStatus.COMPLETED && b.status !== BookingStatus.CANCELED;
   });
 
   const pastSessions = bookings.filter(b => {
       const endDate = new Date(b.endTime);
-      return endDate <= now || b.status === 'completed' || b.status === 'canceled';
+      return endDate <= now || b.status === BookingStatus.COMPLETED || b.status === BookingStatus.CANCELED;
   });
 
   if (loading) {
@@ -144,12 +145,12 @@ function SessionCard({ booking, isUpcoming }: { booking: Booking, isUpcoming: bo
     const isJoinable = isUpcoming && 
                        (now.getTime() >= startDate.getTime() - 10 * 60 * 1000) && 
                        (now.getTime() <= endDate.getTime()) &&
-                       booking.status !== 'completed' &&
-                       booking.status !== 'canceled';
+                       booking.status !== BookingStatus.COMPLETED&&
+                       booking.status !== BookingStatus.CANCELED;
 
     const getStatusLabel = () => {
-        if (booking.status === 'completed') return 'Completed';
-        if (booking.status === 'canceled') return 'Canceled';
+        if (booking.status === BookingStatus.COMPLETED) return 'Completed';
+        if (booking.status === BookingStatus.CANCELED) return 'Canceled';
         if (now > endDate) return 'Ended';
         return 'Completed'; // Default fallback
     };
@@ -172,7 +173,7 @@ function SessionCard({ booking, isUpcoming }: { booking: Booking, isUpcoming: bo
             {/* Main Info */}
             <div className="flex-1 space-y-3">
                 <div className="flex flex-wrap items-center gap-3">
-                    <Badge variant={booking.status === 'confirmed' ? 'default' : 'secondary'} className="capitalize">
+                    <Badge variant={booking.status === BookingStatus.CONFIRMED ? 'default' : 'secondary'} className="capitalize">
                         {booking.status}
                     </Badge>
                     <div className="flex items-center text-sm text-muted-foreground font-medium">
@@ -217,7 +218,7 @@ function SessionCard({ booking, isUpcoming }: { booking: Booking, isUpcoming: bo
                      </Button>
                  )}
                  
-                 {isUpcoming && booking.status !== 'completed' && booking.status !== 'canceled' && (
+                 {isUpcoming && booking.status !== BookingStatus.COMPLETED && booking.status !== BookingStatus.CANCELED && (
                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive w-full md:w-auto">
                          Cancel
                      </Button>

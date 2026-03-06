@@ -2,14 +2,15 @@
 
 import { JoinRoomResponse, RoomDetailResponse, RoomParticipant } from "@/types/room";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Peer, { MediaConnection } from "peerjs";
-import { Mic, MicOff, Phone, Users, Video, VideoOff } from "lucide-react";
+import { CheckCircle2, Loader2, Mic, MicOff, Phone, Users, Video, VideoOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { completeSession } from "@/app/actions/booking";
 
 interface VideoRoomProps {
   room: RoomDetailResponse;
-  onLeave?: () => void;
-  customControls?: React.ReactNode;
+  isPro?: boolean
 }
 
 
@@ -87,7 +88,7 @@ function computeGridLayout(
   return bestLayout;
 }
 
-export function VideoRoom({ room, onLeave, customControls }: VideoRoomProps) {
+export function VideoRoom({ room, isPro }: VideoRoomProps) {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
 
@@ -110,6 +111,7 @@ export function VideoRoom({ room, onLeave, customControls }: VideoRoomProps) {
   const [participants, setParticipants] = useState<Map<string, RoomParticipant>>(new Map());
 
   const [activeSpeaker, setActiveSpeaker] = useState<string | null>(null);
+  const [completing, setCompleting] = useState(false);
 
 
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -241,9 +243,45 @@ export function VideoRoom({ room, onLeave, customControls }: VideoRoomProps) {
 
     peerRef.current?.destroy();
     stopMedia();
-
-    router.push("/home");
+    if (isPro) {
+      router.push("/pro/sessions");
+    } else {
+      router.push("/sessions");
+    }
   };
+
+
+  const handleEndSession = async () => {
+    if (!room || !peerId) return;
+
+    if (!confirm("Are you sure you want to end this session?")) {
+      return;
+    }
+
+    setCompleting(true);
+
+    try {
+      await fetch(`/api/rooms/${room.id}/leave`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ peerId }),
+      });
+
+      connectionsRef.current.forEach(call => call.close());
+      connectionsRef.current.clear();
+
+      peerRef.current?.destroy();
+      stopMedia();
+      await completeSession(room.id);
+
+
+      router.push("/pro/sessions");
+    } catch (err) {
+      console.error(err);
+      setCompleting(false);
+    }
+  };
+
 
   // Start local camera
   useEffect(() => {
@@ -343,11 +381,10 @@ export function VideoRoom({ room, onLeave, customControls }: VideoRoomProps) {
         }
       } else if (data.error === "You are already connected to another room. Leave it first.") {
         console.log(data.error);
-
-        redirect('/room/alreadyconnected')
+          router.replace(isPro?'/room/alreadyconnected?type=pro':'/room/alreadyconnected')
       }
       else {
-        redirect('/home')
+        router.replace('/home')
       }
     };
 
@@ -364,9 +401,11 @@ export function VideoRoom({ room, onLeave, customControls }: VideoRoomProps) {
 
   useEffect(() => {
     const handleUnload = () => {
-      const blob = new Blob([JSON.stringify({})], {
-        type: "application/json",
-      });
+      if (!peerId) return;
+      const blob = new Blob(
+        [JSON.stringify({ peerId })],
+        { type: "application/json" }
+      );
 
       navigator.sendBeacon(
         `/api/rooms/${room.id}/leave`,
@@ -532,11 +571,19 @@ export function VideoRoom({ room, onLeave, customControls }: VideoRoomProps) {
             <Phone className="w-5 h-5 sm:w-6 sm:h-6 rotate-135" />
           </button>
 
-          {customControls && (
-            <div className="border-l border-border pl-3 ml-1 sm:pl-4 sm:ml-2">
-              {customControls}
-            </div>
-          )}
+          {isPro && <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleEndSession}
+            disabled={completing}
+          >
+            {completing ? (
+              <Loader2 className="animate-spin w-4 h-4 mr-2" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+            )}
+            End Session
+          </Button>}
         </div>
       </div>
 

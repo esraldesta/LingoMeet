@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const rooms = await prisma.room.findMany({
       where: {
         status: RoomStatus.ACTIVE,
+        roomType: RoomType.GENERAL,
         OR: [
           { isPublic: true },
           { createdBy: session.user.id },
