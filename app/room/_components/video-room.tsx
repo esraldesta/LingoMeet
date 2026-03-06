@@ -4,9 +4,17 @@ import { JoinRoomResponse, RoomDetailResponse, RoomParticipant } from "@/types/r
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Peer, { MediaConnection } from "peerjs";
-import { CheckCircle2, Loader2, Mic, MicOff, Phone, Users, Video, VideoOff } from "lucide-react";
+import { CheckCircle2, Loader2, Mic, MicOff, Phone, Star, Users, Video, VideoOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { completeSession } from "@/app/actions/booking";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { completeSession, getBookingForReview, submitReview } from "@/app/actions/booking";
 
 interface VideoRoomProps {
   room: RoomDetailResponse;
@@ -112,6 +120,12 @@ export function VideoRoom({ room, isPro }: VideoRoomProps) {
 
   const [activeSpeaker, setActiveSpeaker] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
+
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
+  const [reviewBooking, setReviewBooking] = useState<{ bookingId: string; professionalName: string } | null>(null);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
 
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -243,13 +257,50 @@ export function VideoRoom({ room, isPro }: VideoRoomProps) {
 
     peerRef.current?.destroy();
     stopMedia();
+
     if (isPro) {
       router.push("/pro/sessions");
+      return;
+    }
+
+    const reviewInfo = await getBookingForReview(room.id);
+    if (reviewInfo?.canReview) {
+      setReviewBooking({
+        bookingId: reviewInfo.bookingId,
+        professionalName: reviewInfo.professionalName,
+      });
+      setReviewRating(0);
+      setReviewComment("");
+      setShowReviewDialog(true);
     } else {
       router.push("/home/sessions");
     }
   };
 
+
+  const handleReviewSubmit = async () => {
+    if (!reviewBooking || reviewRating < 1 || reviewRating > 5) return;
+    setReviewSubmitting(true);
+    try {
+      await submitReview({
+        bookingId: reviewBooking.bookingId,
+        rating: reviewRating,
+        comment: reviewComment.trim() || undefined,
+      });
+      setShowReviewDialog(false);
+      setReviewBooking(null);
+      router.push("/home/sessions");
+    } catch (err) {
+      console.error(err);
+      setReviewSubmitting(false);
+    }
+  };
+
+  const handleReviewSkip = () => {
+    setShowReviewDialog(false);
+    setReviewBooking(null);
+    router.push("/home/sessions");
+  };
 
   const handleEndSession = async () => {
     if (!room || !peerId) return;
@@ -442,8 +493,70 @@ export function VideoRoom({ room, isPro }: VideoRoomProps) {
 
     fetchParticipants();
   }, [streams.size]); // triggers when someone joins/leaves
+
   return (
     <div className="h-screen flex flex-col">
+      {/* Review dialog – shown to learner after leaving the call */}
+      <Dialog open={showReviewDialog} onOpenChange={(open) => !open && handleReviewSkip()}>
+        <DialogContent showCloseButton={false} className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rate your session</DialogTitle>
+            <DialogDescription>
+              How was your session with {reviewBooking?.professionalName ?? "your professional"}?
+              Your review helps others and supports the professional.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="flex gap-1 justify-center">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setReviewRating(star)}
+                  className="p-1 rounded hover:bg-muted transition-colors"
+                  aria-label={`${star} star${star > 1 ? "s" : ""}`}
+                >
+                  <Star
+                    className={`w-8 h-8 ${
+                      star <= reviewRating
+                        ? "fill-amber-400 text-amber-400"
+                        : "text-muted-foreground"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+            <div>
+              <label htmlFor="review-comment" className="text-sm font-medium block mb-1">
+                Comment (optional)
+              </label>
+              <textarea
+                id="review-comment"
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                placeholder="Share your experience..."
+                className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                maxLength={500}
+              />
+            </div>
+          </div>
+          <DialogFooter showCloseButton={false}>
+            <Button variant="ghost" onClick={handleReviewSkip} disabled={reviewSubmitting}>
+              Skip
+            </Button>
+            <Button
+              onClick={handleReviewSubmit}
+              disabled={reviewRating < 1 || reviewSubmitting}
+            >
+              {reviewSubmitting ? (
+                <Loader2 className="animate-spin w-4 h-4 mr-2" />
+              ) : null}
+              Submit review
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="bg-secondary px-6 py-3 flex justify-between items-center">
         <div>

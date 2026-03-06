@@ -377,3 +377,103 @@ export async function getUserBookings() {
 
   return bookings;
 }
+
+/**
+ * Get booking for the current room so the learner can leave a review after the call.
+ * Returns null if not the learner, no booking, or room not found.
+ */
+export async function getBookingForReview(roomId: string): Promise<{
+  bookingId: string;
+  professionalName: string;
+  status: string;
+  canReview: boolean;
+  alreadyReviewed: boolean;
+} | null> {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) return null;
+
+  const booking = await prisma.booking.findFirst({
+    where: { roomId },
+    include: {
+      professional: { include: { user: true } },
+      review: true,
+    },
+  });
+
+  if (!booking || booking.learnerId !== session.user.id) return null;
+
+  const alreadyReviewed = Boolean(booking.review);
+  const isCompleted = booking.status === BookingStatus.COMPLETED;
+  const canReview = isCompleted && !alreadyReviewed;
+
+  return {
+    bookingId: booking.id,
+    professionalName: booking.professional.user.name,
+    status: booking.status,
+    canReview,
+    alreadyReviewed,
+  };
+}
+
+/**
+ * Submit a review for a completed booking. Only the learner can submit; one review per booking.
+ */
+export async function submitReview(data: {
+  bookingId: string;
+  rating: number;
+  comment?: string | null;
+}) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) throw new Error("Unauthorized");
+
+  const { bookingId, rating, comment } = data;
+  if (rating < 1 || rating > 5) throw new Error("Rating must be between 1 and 5");
+
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { professional: true, review: true },
+  });
+
+  if (!booking) throw new Error("Booking not found");
+  if (booking.learnerId !== session.user.id) throw new Error("You can only review your own sessions");
+  if (booking.status !== BookingStatus.COMPLETED) throw new Error("You can only review completed sessions");
+  if (booking.review) throw new Error("You have already reviewed this session");
+
+  await prisma.$transaction(async (tx) => {
+    await tx.review.create({
+      data: {
+        bookingId,
+        learnerId: session.user.id,
+        professionalId: booking.professionalId,
+        rating,
+        comment: comment?.trim() || null,
+      },
+    });
+    const result = await tx.review.aggregate({
+      where: { professionalId: booking.professionalId },
+      _avg: { rating: true },
+      _count: true,
+    });
+    const newRating =
+      result._count === 0
+        ? 0
+        : Math.round((result._avg.rating ?? 0) * 10) / 10;
+    await tx.professional.update({
+      where: { id: booking.professionalId },
+      data: {
+        reviewCount: { increment: 1 },
+        rating: newRating,
+      },
+    });
+  });
+
+  revalidatePath("/home/sessions");
+  revalidatePath(`/professionals/${booking.professionalId}`);
+  return { success: true };
+}
