@@ -3,37 +3,65 @@ import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { RoomStatus, RoomType } from "@/generated/prisma/enums";
 
+const DEFAULT_PAGE_SIZE = 12;
+const MAX_PAGE_SIZE = 50;
+
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const rooms = await prisma.room.findMany({
-      where: {
-        status: RoomStatus.ACTIVE,
-        roomType: RoomType.GENERAL,
-        OR: [
-          { isPublic: true },
-          { createdBy: session.user.id },
-        ],
-      },
-      include: {
-        participants: {
-          where: {
-            leftAt: null,
-          },
-          select: {
-            id: true,
+    const { searchParams } = new URL(request.url);
+    const q = searchParams.get("q")?.trim() ?? "";
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+    const limit = Math.min(
+      MAX_PAGE_SIZE,
+      Math.max(1, parseInt(searchParams.get("limit") ?? String(DEFAULT_PAGE_SIZE), 10) || DEFAULT_PAGE_SIZE)
+    );
+
+    const baseWhere = {
+      status: RoomStatus.ACTIVE,
+      roomType: RoomType.GENERAL,
+      OR: [
+        { isPublic: true },
+        { createdBy: session.user.id },
+      ],
+    };
+
+    const searchWhere = q
+      ? {
+          AND: [
+            baseWhere,
+            {
+              OR: [
+                { name: { contains: q, mode: "insensitive" as const } },
+                { description: { contains: q, mode: "insensitive" as const } },
+                { language: { contains: q, mode: "insensitive" as const } },
+                { topic: { contains: q, mode: "insensitive" as const } },
+              ],
+            },
+          ],
+        }
+      : baseWhere;
+
+    const [rooms, total] = await Promise.all([
+      prisma.room.findMany({
+        where: searchWhere,
+        include: {
+          participants: {
+            where: { leftAt: null },
+            select: { id: true },
           },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.room.count({ where: searchWhere }),
+    ]);
 
     const roomsWithCount = rooms.map((room) => ({
       ...room,
@@ -41,7 +69,15 @@ export async function GET(request: NextRequest) {
       isFull: room.participants.length >= room.maxParticipants,
     }));
 
-    return NextResponse.json(roomsWithCount);
+    const totalPages = Math.ceil(total / limit);
+
+    return NextResponse.json({
+      rooms: roomsWithCount,
+      total,
+      page,
+      limit,
+      totalPages,
+    });
   } catch (error) {
     console.error("Error fetching rooms:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

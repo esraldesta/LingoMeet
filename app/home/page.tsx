@@ -1,63 +1,79 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Users, Video, LogOut, GraduationCap, Calendar, Star, Shield, Loader, ArrowRight } from "lucide-react";
+import { Users, Video, GraduationCap, Calendar, Loader, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import CreateRoomDialog from "./_components/CreateRoomDialog";
 import { RoomWithParticipantCount } from "@/types/room";
-// import { getUserBookings } from "@/app/actions/booking";
-
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function HomePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [rooms, setRooms] = useState<RoomWithParticipantCount[]>([]);
-//   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  const q = searchParams.get("q") ?? "";
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
 
   const {
     data: session,
-    isPending, //loading state
-    error, //error object
-    refetch //refetch the session
-  } = authClient.useSession()
+    isPending,
+  } = authClient.useSession();
 
-  const fetchRooms = async () => {
-    try {
-      const response = await fetch("/api/rooms");
-      if (response.ok) {
-        const data = await response.json();
-        setRooms(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch rooms:", error);
+  const fetchRooms = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (page > 1) params.set("page", String(page));
+    const response = await fetch(`/api/rooms?${params.toString()}`);
+    if (response.ok) {
+      const data = await response.json();
+      setRooms(data.rooms ?? []);
+      setTotalPages(data.totalPages ?? 1);
+      setTotal(data.total ?? 0);
     }
-  };
-
-//   const fetchBookings = async () => {
-//       try {
-//           const data = await getUserBookings();
-//           setBookings(data as any); // Casting for simplicity
-//       } catch (error) {
-//           console.error("Failed to fetch bookings:", error);
-//       }
-//   };
+  }, [q, page]);
 
   useEffect(() => {
-    const init = async () => {
-        setLoading(true);
-        // await Promise.all([fetchRooms(), fetchBookings()]);
-        await Promise.all([fetchRooms()]);
-        setLoading(false);
-    };
-    if (session) {
-        init();
-    } else if (!isPending) {
-         // Maybe redirect?
-         setLoading(false);
+    if (!session) {
+      if (!isPending) setLoading(false);
+      return;
     }
-  }, [session, isPending]);
+    let cancelled = false;
+    setLoading(true);
+    fetchRooms().finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [session, isPending, fetchRooms]);
+
+  const setSearchUrl = (newQ: string, newPage: number = 1) => {
+    const params = new URLSearchParams();
+    if (newQ.trim()) params.set("q", newQ.trim());
+    if (newPage > 1) params.set("page", String(newPage));
+    const query = params.toString();
+    router.push(query ? `/home?${query}` : "/home");
+  };
+
+  const [searchInput, setSearchInput] = useState(q);
+  useEffect(() => {
+    setSearchInput(q);
+  }, [q]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchUrl(searchInput, 1);
+  };
+
+  const goToPage = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    setSearchUrl(q, newPage);
+  };
 
 
 
@@ -83,13 +99,31 @@ export default function HomePage() {
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-4 gap-8">
           <div className="lg:col-span-3">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
               <h2 className="text-3xl font-bold">Your Rooms</h2>
-              <CreateRoomDialog
-                onSuccess={() => {
-                  fetchRooms();
-                }}
-              />
+              <div className="flex flex-wrap items-center gap-2">
+                <form onSubmit={handleSearchSubmit} className="flex gap-2 flex-1 sm:flex-initial min-w-0">
+                  <div className="relative flex-1 min-w-[140px]">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      placeholder="Search rooms..."
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                      className="pl-8"
+                      aria-label="Search rooms"
+                    />
+                  </div>
+                  <Button type="submit" variant="secondary" size="default">
+                    Search
+                  </Button>
+                </form>
+                <CreateRoomDialog
+                  onSuccess={() => {
+                    fetchRooms();
+                  }}
+                />
+              </div>
             </div>
 
             {
@@ -149,12 +183,47 @@ export default function HomePage() {
                 </div>
             }
 
-            {
-              !loading && rooms.length < 1 &&
+            {!loading && rooms.length < 1 && (
               <div className="text-center py-12">
-                <p className="mb-4">No rooms yet. Create the first room!</p>
+                <p className="mb-4">
+                  {q ? "No rooms match your search. Try different keywords." : "No rooms yet. Create the first room!"}
+                </p>
+                {q && (
+                  <Button variant="outline" onClick={() => setSearchUrl("", 1)}>
+                    Clear search
+                  </Button>
+                )}
               </div>
-            }
+            )}
+
+            {!loading && rooms.length > 0 && totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(page - 1)}
+                  disabled={page <= 1}
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground px-2">
+                  Page {page} of {totalPages}
+                  {total > 0 && ` (${total} room${total !== 1 ? "s" : ""})`}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(page + 1)}
+                  disabled={page >= totalPages}
+                  aria-label="Next page"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="lg:col-span-1 space-y-6">
