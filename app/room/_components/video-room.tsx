@@ -246,7 +246,7 @@ export function VideoRoom({ room, isPro }: VideoRoomProps) {
     if (isPro) {
       router.push("/pro/sessions");
     } else {
-      router.push("/sessions");
+      router.push("/home/sessions");
     }
   };
 
