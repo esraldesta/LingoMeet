@@ -10,6 +10,7 @@ import { getPublicProfessionals } from '../actions/professional'
 import { LanguageLevel } from '@/generated/prisma/enums'
 import { PaginationInfo, PublicProfessionals } from '@/types'
 import { LANGUAGES } from '@/public/constants'
+import Link from 'next/link'
 
 function ProfessionalsPageContent() {
   const router = useRouter()
@@ -96,13 +97,16 @@ function ProfessionalsPageContent() {
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="border-b border-border bg-card">
+      <div className="border-b border-border bg-card flex justify-between items-center">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <h1 className="text-3xl font-bold">Find Professionals</h1>
           <p className="text-muted-foreground mt-2">
             Browse verified professionals and book your sessions
           </p>
         </div>
+        <Button asChild>
+          <Link href={"/"}>Home</Link>
+        </Button>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8">
