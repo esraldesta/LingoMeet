@@ -194,11 +194,11 @@ function SessionCard({ booking, isUpcoming }: { booking: ProfessionalBooking, is
                      </Button>
                  )}
                  
-                 {isUpcoming && booking.status !== BookingStatus.COMPLETED&& booking.status !== BookingStatus.CANCELED && (
+                 {/* {isUpcoming && booking.status !== BookingStatus.COMPLETED&& booking.status !== BookingStatus.CANCELED && (
                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive w-full md:w-auto">
                          Cancel
                      </Button>
-                 )}
+                 )} */}
             </div>
         </div>
     );

@@ -65,7 +65,7 @@ export function BookingForm({ professional }: BookingFormProps) {
       window.location.href = checkoutUrl;
     } catch (err: any) {
       console.error(err);
-      toast.error(err.error.message || "Booking checkout failed");
+      toast.error(err.message || "Booking checkout failed");
     } finally {
       setLoading(false);
     }
