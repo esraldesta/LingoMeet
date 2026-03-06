@@ -145,7 +145,7 @@ function SessionCard({ booking, isUpcoming }: { booking: Booking, isUpcoming: bo
     const isJoinable = isUpcoming && 
                        (now.getTime() >= startDate.getTime() - 10 * 60 * 1000) && 
                        (now.getTime() <= endDate.getTime()) &&
-                       booking.status !== BookingStatus.COMPLETED&&
+                       booking.status !== BookingStatus.COMPLETED &&
                        booking.status !== BookingStatus.CANCELED;
 
     const getStatusLabel = () => {
