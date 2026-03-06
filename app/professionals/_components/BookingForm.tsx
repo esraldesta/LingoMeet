@@ -35,7 +35,19 @@ export function BookingForm({ professional }: BookingFormProps) {
       setLoadingSlots(true);
       setTime(""); // Reset selected time
       try {
-          const slots = await getAvailableSlots(professional.id, date, duration);
+          // Use the user's browser timezone so "now" and past slots are correct for them
+          const timeZone =
+            typeof Intl !== "undefined" &&
+            Intl.DateTimeFormat &&
+            Intl.DateTimeFormat().resolvedOptions?.().timeZone
+              ? Intl.DateTimeFormat().resolvedOptions().timeZone
+              : undefined;
+          const slots = await getAvailableSlots(
+            professional.id,
+            date,
+            duration,
+            timeZone
+          );
           setAvailableSlots(slots);
       } catch (error) {
           console.error(error);

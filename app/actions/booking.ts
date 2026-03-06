@@ -1,6 +1,11 @@
 "use server";
 
 import { BookingStatus, RoomStatus } from "@/generated/prisma/enums";
+import {
+  getNowInTimezone,
+  slotInTimezoneToUtc,
+  timeStrToMinutes,
+} from "@/lib/datetime/timezone";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { revalidatePath } from "next/cache";
@@ -96,41 +101,58 @@ const SLOT_LOCK_MAX_AGE_MINUTES = Number(process.env.SLOT_LOCK_MAX_AGE_MINUTES ?
 /**
  * Get available time slots for a professional on a given date.
  * All logic runs on the backend: current time, existing bookings, and payment locks.
+ *
+ * @param timeZone - IANA timezone (e.g. "America/New_York"). If provided, "now" and
+ *   past-slot checks use the user's timezone; slot boundaries for overlap use this zone too.
+ *   If omitted, server timezone is used.
  */
 export async function getAvailableSlots(
   professionalId: string,
   dateStr: string,
-  durationMinutes: number = 30
+  durationMinutes: number = 30,
+  timeZone?: string
 ): Promise<string[]> {
-  // 1. Parse the selected date as local calendar date (YYYY-MM-DD → start/end of day in local time)
-  const startOfDay = new Date(dateStr + "T00:00:00");
-  const endOfDay = new Date(dateStr + "T23:59:59.999");
-  const date = new Date(startOfDay);
-  const dayOfWeek = date.getDay(); // 0-6
+  const useUserTz = Boolean(timeZone && timeZone.trim().length > 0);
 
-  // 2. Get professional's availability windows for that day of week
+  // 1. Day boundaries and day-of-week for availability
+  let startOfDayUtc: Date;
+  let endOfDayUtc: Date;
+  let dayOfWeek: number;
+
+  if (useUserTz) {
+    startOfDayUtc = slotInTimezoneToUtc(dateStr, "00:00", timeZone!);
+    endOfDayUtc = new Date(
+      slotInTimezoneToUtc(dateStr, "23:59", timeZone!).getTime() +
+        59 * 1000 +
+        999
+    );
+    dayOfWeek = new Date(dateStr + "T12:00:00").getDay();
+  } else {
+    startOfDayUtc = new Date(dateStr + "T00:00:00");
+    endOfDayUtc = new Date(dateStr + "T23:59:59.999");
+    dayOfWeek = new Date(dateStr + "T12:00:00").getDay();
+  }
+
+  // 2. Professional's availability for that day of week
   const availabilities = await prisma.availability.findMany({
-    where: {
-      professionalId,
-      dayOfWeek,
-    },
+    where: { professionalId, dayOfWeek },
   });
 
   if (availabilities.length === 0) {
     return [];
   }
 
-  // 3. Fetch existing bookings for that professional on that date (excludes canceled)
+  // 3. Bookings that overlap the selected day (in UTC)
   const bookings = await prisma.booking.findMany({
     where: {
       professionalId,
       status: { not: BookingStatus.CANCELED },
-      startTime: { lt: endOfDay },
-      endTime: { gt: startOfDay },
+      startTime: { lt: endOfDayUtc },
+      endTime: { gt: startOfDayUtc },
     },
   });
 
-  // 4. Fetch payments that block slots: succeeded (booking exists/will exist) or recent requires_payment/processing
+  // 4. Payments that block slots
   const lockCutoff = new Date(
     Date.now() - SLOT_LOCK_MAX_AGE_MINUTES * 60 * 1000
   );
@@ -138,44 +160,75 @@ export async function getAvailableSlots(
     where: {
       professionalId,
       status: { in: ["requires_payment", "processing", "succeeded"] },
-      startTime: { lt: endOfDay },
-      endTime: { gt: startOfDay },
-      OR: [
-        { status: "succeeded" },
-        { createdAt: { gte: lockCutoff } },
-      ],
+      startTime: { lt: endOfDayUtc },
+      endTime: { gt: startOfDayUtc },
+      OR: [{ status: "succeeded" }, { createdAt: { gte: lockCutoff } }],
     },
   });
 
-  const now = new Date();
-  const earliestAllowedStart = new Date(
-    now.getTime() + MIN_SLOT_LEAD_MINUTES * 60 * 1000
-  );
+  // 5. "Now" for past-slot filter (user TZ or server)
+  let nowDateStr: string;
+  let nowMinutesSinceMidnight: number;
+
+  if (useUserTz) {
+    const nowInTz = getNowInTimezone(timeZone!);
+    nowDateStr = nowInTz.dateStr;
+    nowMinutesSinceMidnight = nowInTz.minutesSinceMidnight;
+  } else {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    nowDateStr = `${y}-${m}-${d}`;
+    nowMinutesSinceMidnight =
+      now.getHours() * 60 + now.getMinutes();
+  }
+
+  const earliestMinutes =
+    nowMinutesSinceMidnight + MIN_SLOT_LEAD_MINUTES;
   const slots: string[] = [];
 
-  // 5. Build slots from each availability block
+  // 6. Build slots from each availability block
   for (const availability of availabilities) {
     const [startHour, startMin] = availability.startTime.split(":").map(Number);
     const [endHour, endMin] = availability.endTime.split(":").map(Number);
-
-    const availStart = new Date(dateStr + "T00:00:00");
-    availStart.setHours(startHour, startMin, 0, 0);
-    const availEnd = new Date(dateStr + "T00:00:00");
-    availEnd.setHours(endHour, endMin, 0, 0);
 
     let currentHour = startHour;
     let currentMin = startMin;
 
     while (true) {
-      const slotStart = new Date(dateStr + "T00:00:00");
-      slotStart.setHours(currentHour, currentMin, 0, 0);
-      if (slotStart >= availEnd) break;
+      const timeString = `${currentHour.toString().padStart(2, "0")}:${currentMin.toString().padStart(2, "0")}`;
 
-      const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60000);
-      if (slotEnd > availEnd) break;
+      const slotEndHour =
+        currentMin + durationMinutes >= 60
+          ? currentHour + 1
+          : currentHour;
+      const slotEndMin = (currentMin + durationMinutes) % 60;
+      const slotEndTimeStr = `${slotEndHour.toString().padStart(2, "0")}:${slotEndMin.toString().padStart(2, "0")}`;
 
-      // Must not be in the past (or within the lead-time buffer)
-      if (slotStart < earliestAllowedStart) {
+      if (currentHour > endHour || (currentHour === endHour && currentMin >= endMin)) {
+        break;
+      }
+      if (
+        slotEndHour > endHour ||
+        (slotEndHour === endHour && slotEndMin > endMin)
+      ) {
+        break;
+      }
+
+      // Past check (in user or server timezone)
+      if (dateStr < nowDateStr) {
+        currentMin += 30;
+        if (currentMin >= 60) {
+          currentHour += 1;
+          currentMin -= 60;
+        }
+        continue;
+      }
+      if (
+        dateStr === nowDateStr &&
+        timeStrToMinutes(timeString) < earliestMinutes
+      ) {
         currentMin += 30;
         if (currentMin >= 60) {
           currentHour += 1;
@@ -184,9 +237,24 @@ export async function getAvailableSlots(
         continue;
       }
 
-      // Must not overlap any existing booking
+      // Overlap: convert slot to UTC for comparison with DB
+      let slotStartUtc: Date;
+      let slotEndUtc: Date;
+
+      if (useUserTz) {
+        slotStartUtc = slotInTimezoneToUtc(dateStr, timeString, timeZone!);
+        slotEndUtc = new Date(
+          slotStartUtc.getTime() + durationMinutes * 60 * 1000
+        );
+      } else {
+        slotStartUtc = new Date(dateStr + "T" + timeString + ":00");
+        slotEndUtc = new Date(
+          slotStartUtc.getTime() + durationMinutes * 60 * 1000
+        );
+      }
+
       const bookingOverlap = bookings.some(
-        (b) => slotStart < b.endTime && slotEnd > b.startTime
+        (b) => slotStartUtc < b.endTime && slotEndUtc > b.startTime
       );
       if (bookingOverlap) {
         currentMin += 30;
@@ -197,9 +265,8 @@ export async function getAvailableSlots(
         continue;
       }
 
-      // Must not overlap any blocking payment (succeeded or recent pending/processing)
       const paymentOverlap = blockingPayments.some(
-        (p) => slotStart < p.endTime && slotEnd > p.startTime
+        (p) => slotStartUtc < p.endTime && slotEndUtc > p.startTime
       );
       if (paymentOverlap) {
         currentMin += 30;
@@ -210,7 +277,6 @@ export async function getAvailableSlots(
         continue;
       }
 
-      const timeString = `${currentHour.toString().padStart(2, "0")}:${currentMin.toString().padStart(2, "0")}`;
       if (!slots.includes(timeString)) {
         slots.push(timeString);
       }
