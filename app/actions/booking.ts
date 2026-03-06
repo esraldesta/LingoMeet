@@ -87,108 +87,143 @@ export async function completeSession(roomId: string) {
 }
 
 
-export async function getAvailableSlots(professionalId: string, dateStr: string, durationMinutes: number = 30) {
-    // 1. Get the date and day of week
-    const date = new Date(dateStr);
-    const dayOfWeek = date.getDay(); // 0-6
+/** Minimum minutes from now before a slot can be offered (avoids slot disappearing during checkout). */
+const MIN_SLOT_LEAD_MINUTES = Number(process.env.MIN_SLOT_LEAD_MINUTES ?? "5");
 
-    // 2. Get Professional Availability for that day (Find all slots for the day)
-    const availabilities = await prisma.availability.findMany({
-        where: {
-            professionalId: professionalId,
-            dayOfWeek: dayOfWeek
+/** Same as in stripeService: only payments created within this window block slots (abandoned carts free the slot). */
+const SLOT_LOCK_MAX_AGE_MINUTES = Number(process.env.SLOT_LOCK_MAX_AGE_MINUTES ?? "30");
+
+/**
+ * Get available time slots for a professional on a given date.
+ * All logic runs on the backend: current time, existing bookings, and payment locks.
+ */
+export async function getAvailableSlots(
+  professionalId: string,
+  dateStr: string,
+  durationMinutes: number = 30
+): Promise<string[]> {
+  // 1. Parse the selected date as local calendar date (YYYY-MM-DD → start/end of day in local time)
+  const startOfDay = new Date(dateStr + "T00:00:00");
+  const endOfDay = new Date(dateStr + "T23:59:59.999");
+  const date = new Date(startOfDay);
+  const dayOfWeek = date.getDay(); // 0-6
+
+  // 2. Get professional's availability windows for that day of week
+  const availabilities = await prisma.availability.findMany({
+    where: {
+      professionalId,
+      dayOfWeek,
+    },
+  });
+
+  if (availabilities.length === 0) {
+    return [];
+  }
+
+  // 3. Fetch existing bookings for that professional on that date (excludes canceled)
+  const bookings = await prisma.booking.findMany({
+    where: {
+      professionalId,
+      status: { not: BookingStatus.CANCELED },
+      startTime: { lt: endOfDay },
+      endTime: { gt: startOfDay },
+    },
+  });
+
+  // 4. Fetch payments that block slots: succeeded (booking exists/will exist) or recent requires_payment/processing
+  const lockCutoff = new Date(
+    Date.now() - SLOT_LOCK_MAX_AGE_MINUTES * 60 * 1000
+  );
+  const blockingPayments = await prisma.payment.findMany({
+    where: {
+      professionalId,
+      status: { in: ["requires_payment", "processing", "succeeded"] },
+      startTime: { lt: endOfDay },
+      endTime: { gt: startOfDay },
+      OR: [
+        { status: "succeeded" },
+        { createdAt: { gte: lockCutoff } },
+      ],
+    },
+  });
+
+  const now = new Date();
+  const earliestAllowedStart = new Date(
+    now.getTime() + MIN_SLOT_LEAD_MINUTES * 60 * 1000
+  );
+  const slots: string[] = [];
+
+  // 5. Build slots from each availability block
+  for (const availability of availabilities) {
+    const [startHour, startMin] = availability.startTime.split(":").map(Number);
+    const [endHour, endMin] = availability.endTime.split(":").map(Number);
+
+    const availStart = new Date(dateStr + "T00:00:00");
+    availStart.setHours(startHour, startMin, 0, 0);
+    const availEnd = new Date(dateStr + "T00:00:00");
+    availEnd.setHours(endHour, endMin, 0, 0);
+
+    let currentHour = startHour;
+    let currentMin = startMin;
+
+    while (true) {
+      const slotStart = new Date(dateStr + "T00:00:00");
+      slotStart.setHours(currentHour, currentMin, 0, 0);
+      if (slotStart >= availEnd) break;
+
+      const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60000);
+      if (slotEnd > availEnd) break;
+
+      // Must not be in the past (or within the lead-time buffer)
+      if (slotStart < earliestAllowedStart) {
+        currentMin += 30;
+        if (currentMin >= 60) {
+          currentHour += 1;
+          currentMin -= 60;
         }
-    });
+        continue;
+      }
 
-    if (availabilities.length === 0) {
-        return [];
+      // Must not overlap any existing booking
+      const bookingOverlap = bookings.some(
+        (b) => slotStart < b.endTime && slotEnd > b.startTime
+      );
+      if (bookingOverlap) {
+        currentMin += 30;
+        if (currentMin >= 60) {
+          currentHour += 1;
+          currentMin -= 60;
+        }
+        continue;
+      }
+
+      // Must not overlap any blocking payment (succeeded or recent pending/processing)
+      const paymentOverlap = blockingPayments.some(
+        (p) => slotStart < p.endTime && slotEnd > p.startTime
+      );
+      if (paymentOverlap) {
+        currentMin += 30;
+        if (currentMin >= 60) {
+          currentHour += 1;
+          currentMin -= 60;
+        }
+        continue;
+      }
+
+      const timeString = `${currentHour.toString().padStart(2, "0")}:${currentMin.toString().padStart(2, "0")}`;
+      if (!slots.includes(timeString)) {
+        slots.push(timeString);
+      }
+
+      currentMin += 30;
+      if (currentMin >= 60) {
+        currentHour += 1;
+        currentMin -= 60;
+      }
     }
+  }
 
-    // 3. Get existing bookings for that professional on that date
-    const startOfDay = new Date(dateStr);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(dateStr);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const bookings = await prisma.booking.findMany({
-        where: {
-            professionalId: professionalId,
-            status: { not: BookingStatus.CANCELED }, // Ignore canceled bookings
-            startTime: {
-                gte: startOfDay,
-                lte: endOfDay
-            }
-        }
-    });
-
-    const slots: string[] = [];
-    const now = new Date();
-
-    // 4. Iterate over EACH availability block
-    for (const availability of availabilities) {
-        // Parse start/end times from availability (e.g., "09:00" -> hours/mins)
-        const [startHour, startMin] = availability.startTime.split(':').map(Number);
-        const [endHour, endMin] = availability.endTime.split(':').map(Number);
-
-        // Create availability start and end dates for the day
-        const availStart = new Date(dateStr);
-        availStart.setHours(startHour, startMin, 0, 0);
-        
-        const availEnd = new Date(dateStr);
-        availEnd.setHours(endHour, endMin, 0, 0);
-
-        // Let's iterate in 30 minute increments for start times
-        let currentHour = startHour;
-        let currentMin = startMin;
-
-        while (true) {
-            // Construct slot start date
-            const slotDate = new Date(dateStr);
-            slotDate.setHours(currentHour, currentMin, 0, 0);
-            
-            // Stop if start time is past availability end
-            if (slotDate >= availEnd) break;
-
-            // Calculate potential end time based on DURATION
-            const slotEndDate = new Date(slotDate.getTime() + durationMinutes * 60000);
-
-            // Check if the entire duration fits within THIS availability block
-            if (slotEndDate > availEnd) {
-                 // Too close to end of block, break to next block
-                 break; 
-            }
-
-            // Check overlap with existing bookings
-            const isOverlap = bookings.some(b => {
-                // Check if (SlotStart < BookingEnd) and (SlotEnd > BookingStart)
-                return slotDate < b.endTime && slotEndDate > b.startTime;
-            });
-
-            // Also check if slot is in the past (if today)
-            const isPast = slotDate < now;
-
-            if (!isOverlap && !isPast) {
-                // Format time as HH:mm
-                const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
-                
-                // Avoid duplicates if multiple blocks overlap (unlikely in valid config but good to be safe)
-                if (!slots.includes(timeString)) {
-                    slots.push(timeString);
-                }
-            }
-
-            // Increment start time by 30 mins
-            currentMin += 30;
-            if (currentMin >= 60) {
-                currentHour += 1;
-                currentMin -= 60;
-            }
-        }
-    }
-
-    // Sort slots chronologically
-    return slots.sort();
+  return slots.sort();
 }
 
 
