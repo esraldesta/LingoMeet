@@ -63,9 +63,9 @@ export function BookingForm({ professional }: BookingFormProps) {
 
       // Redirect the user to Stripe Checkout
       window.location.href = checkoutUrl;
-    } catch (error: any) {
-      console.error(error);
-      toast.error(error.message || "Booking checkout failed");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.error.message || "Booking checkout failed");
     } finally {
       setLoading(false);
     }
