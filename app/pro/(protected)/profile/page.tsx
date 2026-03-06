@@ -276,10 +276,10 @@ export default function ProfessionalProfilePage() {
               <h2 className="text-xl font-semibold">Weekly Availability</h2>
             </div>
 
-            <Tabs defaultValue="editor" className="w-full">
+            <Tabs defaultValue="calendar" className="w-full">
               <TabsList>
-                <TabsTrigger value="editor">Editor</TabsTrigger>
                 <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+                <TabsTrigger value="editor">Editor</TabsTrigger>
               </TabsList>
 
               <TabsContent value="editor" className="mt-6">

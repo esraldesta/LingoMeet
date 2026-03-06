@@ -12,6 +12,7 @@ interface TimeSlot {
 }
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS_SHORT = ['Su','M','T','W','T','F','S']
 const HOURS = Array.from({ length: 24 }, (_, i) =>
   `${String(i).padStart(2, '0')}:00`
 );
@@ -144,19 +145,20 @@ export function AvailabilityCalendar({
         <CardTitle>Weekly Availability</CardTitle>
         <CardDescription>Green cells indicate available time slots</CardDescription>
       </CardHeader>
-      <CardContent className="overflow-x-auto">
+      <CardContent className="overflow-x-auto px-1 sm:px-6">
         <div className="min-w-full">
           {/* Header with day names */}
           <div className="grid grid-cols-[60px_repeat(7,1fr)] gap-1 mb-4">
             <div className="h-12 flex items-center justify-center text-xs font-semibold text-muted-foreground">
               Time
             </div>
-            {DAYS_OF_WEEK.map((day) => (
+            {DAYS_OF_WEEK.map((day,i) => (
               <div
                 key={day}
                 className="h-12 flex items-center justify-center text-xs font-semibold bg-muted rounded-md"
               >
-                {day}
+                <span className="sm:hidden">{DAYS_SHORT[i]}</span>
+                <span className="hidden sm:inline">{day}</span>
               </div>
             ))}
           </div>

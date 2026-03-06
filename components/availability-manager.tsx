@@ -101,7 +101,7 @@ export function AvailabilityManager({
             Add your available time slots for each day of the week
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+<CardContent className="space-y-6 overflow-x-hidden">
           {DAYS_OF_WEEK.map((day, dayIndex) => (
             <div key={dayIndex} className="space-y-3">
               <div className="flex items-center justify-between">
@@ -120,7 +120,7 @@ export function AvailabilityManager({
               {slotsByDay[dayIndex].length === 0 ? (
                 <p className="text-sm text-muted-foreground py-2">Not available</p>
               ) : (
-                <div className="space-y-2 ml-4">
+                <div className="space-y-2 md:ml-4">
                   {slotsByDay[dayIndex].map((slot, slotIndex) => {
                     const globalIndex = slots.findIndex(
                       (s) => s.dayOfWeek === dayIndex && slots.indexOf(s) === slots.indexOf(slot)
@@ -128,20 +128,20 @@ export function AvailabilityManager({
                     const actualIndex = slots.indexOf(slot);
 
                     return (
-                      <div key={actualIndex} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                      <div key={actualIndex} className="flex flex-wrap items-center justify-end gap-3 p-3 bg-muted rounded-lg w-full">
                         <div className="flex items-center gap-2 flex-1">
                           <Input
                             type="time"
                             value={slot.startTime}
                             onChange={(e) => updateSlot(actualIndex, { startTime: e.target.value })}
-                            className="w-24"
+                            className="w-25 md:24"
                           />
                           <span className="text-muted-foreground">to</span>
                           <Input
                             type="time"
                             value={slot.endTime}
                             onChange={(e) => updateSlot(actualIndex, { endTime: e.target.value })}
-                            className="w-24"
+                            className="w-25 md:24"
                           />
                         </div>
                         <Button
