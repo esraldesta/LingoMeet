@@ -23,7 +23,7 @@ export default function ProRoomPage() {
    */
   useEffect(() => {
     if (!isPending && !session) {
-      router.replace("/auth/pro-signin");
+      router.replace("/auth/signin");
     }
   }, [isPending, session, router]);
 

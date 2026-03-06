@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
-import ProHeader from "./_components/ProHeader";
+import ProHeader from "../_components/ProHeader";
 
 export default async function HomeLayout({
     children,
